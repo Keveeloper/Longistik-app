@@ -1,0 +1,7 @@
+{
+  "name": "Longistik",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}
