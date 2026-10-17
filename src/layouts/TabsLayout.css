@@ -1,0 +1,37 @@
+/*
+ * Bottom tab bar from the designs: white, soft top border, tinta when selected.
+ * 56px of content (icon 12px from the top, label 4px below it). In the designs
+ * the label dips 7px into the home-indicator area, so that much is taken off the
+ * bottom safe-area padding: 56 + (34 - 7) = 83px on an iPhone, as designed.
+ */
+.app-tab-bar {
+  --background: var(--ion-background-color);
+  --border: 1px solid var(--app-divider-color);
+  --color: var(--ion-color-medium);
+  --color-selected: var(--ion-color-dark);
+  height: 56px;
+  padding-inline: 8px;
+  padding-bottom: max(0px, calc(var(--ion-safe-area-bottom, 0px) - 7px));
+}
+
+.app-tab-bar ion-tab-button {
+  --padding-top: 12px;
+  --padding-bottom: 2px;
+  /* Ionic md mode adds letter-spacing to tab labels */
+  letter-spacing: normal;
+}
+
+.app-tab-bar ion-icon {
+  font-size: 24px;
+  margin: 0;
+}
+
+.app-tab-bar ion-label {
+  margin: 4px 0 0;
+  font-size: 11px;
+  line-height: 13px;
+}
+
+.app-tab-bar ion-tab-button.tab-selected ion-label {
+  font-weight: 600;
+}

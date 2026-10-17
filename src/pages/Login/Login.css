@@ -1,0 +1,22 @@
+/* Ionic component internals for the login screen (layout lives in Tailwind classes) */
+
+/* Underlined text fields: label sits outside, the ion-input only draws value + line */
+.login-field {
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  font-size: 18px;
+  border-bottom: 1px solid var(--app-line-color);
+  transition: border-color 0.15s ease;
+}
+
+.login-field.has-focus {
+  border-bottom-color: var(--ion-color-primary);
+}
+
+/* Pill buttons from the visual system */
+.login-button {
+  --border-radius: 9999px;
+  --box-shadow: none;
+}

@@ -1,2 +1,94 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+/*
+ * Longistik visual system ("Sistema visual" design file).
+ * Ionic requires every color variant (-rgb, -contrast, -shade, -tint);
+ * shade = 12% black mix, tint = 10% white mix.
+ * These are also exposed as Tailwind colors in global.css.
+ */
+:root {
+  --ion-font-family: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --ion-background-color: #ffffff;
+  --ion-background-color-rgb: 255, 255, 255;
+  --ion-text-color: #153741;
+  --ion-text-color-rgb: 21, 55, 65;
+
+  /* Hairlines: input underlines */
+  --app-line-color: #dce2e6;
+  /* Softer hairlines: section dividers, tab bar border, progress track */
+  --app-divider-color: #eef1f3;
+
+  /* Verde acción: primary buttons */
+  --ion-color-primary: #3a8250;
+  --ion-color-primary-rgb: 58, 130, 80;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #337246;
+  --ion-color-primary-tint: #4e8f62;
+
+  /* Petróleo: links */
+  --ion-color-secondary: #2f6571;
+  --ion-color-secondary-rgb: 47, 101, 113;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #295963;
+  --ion-color-secondary-tint: #44747f;
+
+  /* Cielo: accents on top of tinta */
+  --ion-color-tertiary: #79c4d7;
+  --ion-color-tertiary-rgb: 121, 196, 215;
+  --ion-color-tertiary-contrast: #153741;
+  --ion-color-tertiary-contrast-rgb: 21, 55, 65;
+  --ion-color-tertiary-shade: #6aacbd;
+  --ion-color-tertiary-tint: #86cadb;
+
+  /* Tinta: brand, main text */
+  --ion-color-dark: #153741;
+  --ion-color-dark-rgb: 21, 55, 65;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #123039;
+  --ion-color-dark-tint: #2c4b54;
+
+  /* Secondary text: subtitles, labels, footers */
+  --ion-color-medium: #5a6b72;
+  --ion-color-medium-rgb: 90, 107, 114;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #4f5e64;
+  --ion-color-medium-tint: #6b7a80;
+
+  /* Status: "RNDC reportado" dot, CUMPLIDO/ACTIVO (same green as verde acción) */
+  --ion-color-success: #3a8250;
+  --ion-color-success-rgb: 58, 130, 80;
+  --ion-color-success-contrast: #ffffff;
+  --ion-color-success-contrast-rgb: 255, 255, 255;
+  --ion-color-success-shade: #337246;
+  --ion-color-success-tint: #4e8f62;
+
+  /* Status: "Pendiente RNDC" dot. Tinta text reads better than white on this orange */
+  --ion-color-warning: #d87029;
+  --ion-color-warning-rgb: 216, 112, 41;
+  --ion-color-warning-contrast: #153741;
+  --ion-color-warning-contrast-rgb: 21, 55, 65;
+  --ion-color-warning-shade: #be6324;
+  --ion-color-warning-tint: #dc7e3e;
+
+  /* Status: ERROR RNDC, form errors */
+  --ion-color-danger: #b3322e;
+  --ion-color-danger-rgb: 179, 50, 46;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #9e2c28;
+  --ion-color-danger-tint: #bb4743;
+
+  /* Superficie: blocks, secondary buttons */
+  --ion-color-light: #f3f5f7;
+  --ion-color-light-rgb: 243, 245, 247;
+  --ion-color-light-contrast: #153741;
+  --ion-color-light-contrast-rgb: 21, 55, 65;
+  --ion-color-light-shade: #d6d8d9;
+  --ion-color-light-tint: #f4f6f8;
+}

@@ -1,0 +1,141 @@
+/*
+ * Global styles: Ionic + Tailwind CSS (hybrid setup)
+ * -----------------------------------------------------
+ * Cascade layers decide who wins when rules collide (later layer wins):
+ *   ionic      -> Ionic's global CSS (reset, structure, typography)
+ *   theme/base/components/utilities -> Tailwind
+ * Unlayered CSS (theme/variables.css, page .css files) beats every layer.
+ *
+ * Tailwind's Preflight reset is intentionally NOT imported: Ionic's
+ * normalize.css already resets the browser defaults.
+ *
+ * Rule of thumb: style Ion* components with Ionic CSS variables
+ * (--background, --color...) or ::part; use Tailwind classes for your own markup.
+ */
+@layer ionic, theme, base, components, utilities;
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/react/css/core.css" layer(ionic);
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/react/css/normalize.css" layer(ionic);
+@import "@ionic/react/css/structure.css" layer(ionic);
+@import "@ionic/react/css/typography.css" layer(ionic);
+
+/*
+ * Dark mode is intentionally off: the designs are light-only. To enable it later,
+ * import "@ionic/react/css/palettes/dark.system.css" layer(ionic) here and define
+ * dark values for the brand colors in variables.css.
+ */
+
+/* Tailwind: theme tokens + utility classes only (no Preflight) */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/*
+ * Expose Ionic's colors to Tailwind so `bg-primary`, `text-danger`, etc.
+ * use the same values as `color="primary"` on Ionic components.
+ * Change the colors in theme/variables.css (--ion-color-*), not here.
+ */
+@theme inline {
+  --color-primary: var(--ion-color-primary);
+  --color-primary-contrast: var(--ion-color-primary-contrast);
+  --color-secondary: var(--ion-color-secondary);
+  --color-secondary-contrast: var(--ion-color-secondary-contrast);
+  --color-tertiary: var(--ion-color-tertiary);
+  --color-tertiary-contrast: var(--ion-color-tertiary-contrast);
+  --color-success: var(--ion-color-success);
+  --color-success-contrast: var(--ion-color-success-contrast);
+  --color-warning: var(--ion-color-warning);
+  --color-warning-contrast: var(--ion-color-warning-contrast);
+  --color-danger: var(--ion-color-danger);
+  --color-danger-contrast: var(--ion-color-danger-contrast);
+  --color-light: var(--ion-color-light);
+  --color-medium: var(--ion-color-medium);
+  --color-dark: var(--ion-color-dark);
+
+  /* Page background and text */
+  --color-background: var(--ion-background-color);
+  --color-foreground: var(--ion-text-color);
+
+  /* Brand palette, named as in the "Sistema visual" design file */
+  --color-tinta: var(--ion-color-dark); /* brand, main text */
+  --color-verde: var(--ion-color-primary); /* verde acción: buttons (logo uses #3E854B) */
+  --color-cielo: var(--ion-color-tertiary); /* accents on top of tinta */
+  --color-petroleo: var(--ion-color-secondary); /* links */
+  --color-superficie: var(--ion-color-light); /* blocks, secondary buttons */
+  --color-muted: var(--ion-color-medium); /* secondary text: subtitles, labels, captions */
+  --color-line: var(--app-line-color); /* input underlines */
+  --color-divider: var(--app-divider-color); /* section dividers, progress track */
+
+  /* RNDC sync dots */
+  --color-rndc-reportado: var(--ion-color-success);
+  --color-rndc-pendiente: var(--ion-color-warning);
+
+  --font-sans: var(--ion-font-family);
+}
+
+/*
+ * Status badges ("Estados" in the design). Each state has a text color and a
+ * `-soft` background: <span class="bg-en-ruta-soft text-en-ruta">EN RUTA</span>
+ */
+@theme {
+  --color-creada: #27568e;
+  --color-creada-soft: #e4edf9;
+  --color-manifiesto: #4a4c86;
+  --color-manifiesto-soft: #ecebf3;
+  --color-en-ruta: #954914;
+  --color-en-ruta-soft: #fdecdc;
+  --color-cumplido: #2e6b41;
+  --color-cumplido-soft: #e7f4ea;
+  --color-activo: #2e6b41;
+  --color-activo-soft: #e7f4ea;
+  --color-inactivo: #5a6b72;
+  --color-inactivo-soft: #f3f5f7;
+  --color-error-rndc: #b3322e;
+  --color-error-rndc-soft: #fbe2e1;
+
+  /* Pending-RNDC callout background (Inicio), lighter than en-ruta-soft */
+  --color-rndc-pendiente-soft: #fdf1e6;
+
+  /*
+   * Type scale (Figtree, weights 400 / 500 / 600). Each size carries its
+   * line height and weight: `text-display` is 34px/40px semibold.
+   * Override per use with font-* / leading-* when a screen differs.
+   */
+  --text-display: 34px; /* key figures, e.g. manifest number MT000661 */
+  --text-display--line-height: 40px;
+  --text-display--font-weight: 600;
+  --text-title: 22px; /* section titles, e.g. "Operación de hoy" */
+  --text-title--line-height: 28px;
+  --text-title--font-weight: 500;
+  --text-body: 16px; /* body text, e.g. "Villa Rica → Santiago de Cali" */
+  --text-body--line-height: 24px;
+  --text-body--font-weight: 400;
+  --text-caption: 13px; /* labels, metadata, footers */
+  --text-caption--line-height: 18px;
+  --text-caption--font-weight: 400;
+  /* Status badge label: measured 11px in the design (uppercase, medium) */
+  --text-badge: 11px;
+  --text-badge--line-height: 16px;
+  --text-badge--font-weight: 500;
+  --text-badge--letter-spacing: 0.04em;
+}
+
+/*
+ * Default heading styles from the type scale. In the `base` layer, so they
+ * beat Ionic's typography.css but any Tailwind utility still overrides them.
+ */
+@layer base {
+  h1 {
+    font-size: var(--text-display);
+    line-height: var(--text-display--line-height);
+    font-weight: var(--text-display--font-weight);
+  }
+
+  h2 {
+    font-size: var(--text-title);
+    line-height: var(--text-title--line-height);
+    font-weight: var(--text-title--font-weight);
+  }
+}

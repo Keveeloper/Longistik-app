@@ -1,79 +1,78 @@
-import { Navigate, Route } from 'react-router-dom';
-import {
-  IonApp,
-  IonIcon,
-  IonLabel,
-  IonRouterOutlet,
-  IonTabBar,
-  IonTabButton,
-  IonTabs,
-  setupIonicReact
-} from '@ionic/react';
+import { useEffect } from 'react';
+import { Route, useLocation, useNavigate } from 'react-router-dom';
+import { IonApp, IonRouterOutlet, IonSpinner, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { ellipse, square, triangle } from 'ionicons/icons';
-import Tab1 from './pages/Tab1';
-import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
+import TabsLayout from './layouts/TabsLayout';
+import Login from './pages/Login/Login';
+import { useAuthStore } from './store/auth.store';
 
-/* Core CSS required for Ionic components to work properly */
-import '@ionic/react/css/core.css';
+/* Figtree, bundled locally so it works offline inside the native app */
+import '@fontsource-variable/figtree';
 
-/* Basic CSS for apps built with Ionic */
-import '@ionic/react/css/normalize.css';
-import '@ionic/react/css/structure.css';
-import '@ionic/react/css/typography.css';
-
-/* Optional CSS utils that can be commented out */
-import '@ionic/react/css/padding.css';
-import '@ionic/react/css/float-elements.css';
-import '@ionic/react/css/text-alignment.css';
-import '@ionic/react/css/text-transformation.css';
-import '@ionic/react/css/flex-utils.css';
-import '@ionic/react/css/display.css';
-
-/**
- * Ionic Dark Mode
- * -----------------------------------------------------
- * For more info, please see:
- * https://ionicframework.com/docs/theming/dark-mode
- */
-
-/* import '@ionic/react/css/palettes/dark.always.css'; */
-/* import '@ionic/react/css/palettes/dark.class.css'; */
-import '@ionic/react/css/palettes/dark.system.css';
+/* Ionic global CSS + Tailwind (see theme/global.css for the layer setup) */
+import './theme/global.css';
 
 /* Theme variables */
 import './theme/variables.css';
 
 setupIonicReact();
 
-const App: React.FC = () => (
-  <IonApp>
-    <IonReactRouter>
-      <IonTabs>
-        <IonRouterOutlet>
-          <Route path="/tab1" element={<Tab1 />} />
-          <Route path="/tab2" element={<Tab2 />} />
-          <Route path="/tab3" element={<Tab3 />} />
-          <Route path="/" element={<Navigate to="/tab1" replace />} />
-        </IonRouterOutlet>
-        <IonTabBar slot="bottom">
-          <IonTabButton tab="tab1" href="/tab1">
-            <IonIcon aria-hidden="true" icon={triangle} />
-            <IonLabel>Tab 1</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon aria-hidden="true" icon={ellipse} />
-            <IonLabel>Tab 2</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon aria-hidden="true" icon={square} />
-            <IonLabel>Tab 3</IonLabel>
-          </IonTabButton>
-        </IonTabBar>
-      </IonTabs>
-    </IonReactRouter>
-  </IonApp>
-);
+const LOGIN_PATH = '/login';
+const HOME_PATH = '/inicio';
+
+/*
+ * Route guard. It lives outside IonRouterOutlet on purpose:
+ * - The outlet keeps visited pages mounted (hidden) and reuses them by path, so
+ *   redirects rendered inside routes (e.g. a component wrapping <Navigate>) keep
+ *   firing from hidden pages and cause infinite redirect loops.
+ * - The outlet must stay mounted: an outlet mounted right after a navigation
+ *   leaves its first page stuck invisible (`ion-page-invisible`).
+ * So routes are static and this component only redirects the active URL.
+ */
+const AppRoutes: React.FC = () => {
+  const isAuthenticated = useAuthStore((s) => !!s.token);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  const onLoginPage = pathname === LOGIN_PATH;
+  const redirectTo =
+    !isAuthenticated && !onLoginPage ? LOGIN_PATH : isAuthenticated && onLoginPage ? HOME_PATH : null;
+
+  useEffect(() => {
+    if (redirectTo) navigate(redirectTo, { replace: true });
+  }, [redirectTo, navigate]);
+
+  return (
+    <IonRouterOutlet>
+      <Route path={LOGIN_PATH} element={<Login />} />
+      <Route path="/*" element={<TabsLayout />} />
+    </IonRouterOutlet>
+  );
+};
+
+const App: React.FC = () => {
+  // Persisted session is read asynchronously; wait for it so the guard
+  // doesn't flash the login screen for users who are already signed in.
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
+
+  if (!hasHydrated) {
+    return (
+      <IonApp>
+        <div className="flex h-full items-center justify-center">
+          <IonSpinner name="crescent" />
+        </div>
+      </IonApp>
+    );
+  }
+
+  return (
+    <IonApp>
+      {/* Opt in to React Router v7 behavior (silences the future-flag warnings) */}
+      <IonReactRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AppRoutes />
+      </IonReactRouter>
+    </IonApp>
+  );
+};
 
 export default App;
