@@ -48,4 +48,17 @@ describe('Remesas (mock data)', () => {
     rows().should('have.length', 0);
     cy.contains('No hay remesas que coincidan').should('be.visible');
   });
+
+  it('keeps the header fixed while only the items scroll', () => {
+    remesasPage().find('.app-search').then(($search) => {
+      const searchTop = $search[0].getBoundingClientRect().top;
+      remesasPage().find('.remesas-item').first().then(($row) => {
+        const rowTop = $row[0].getBoundingClientRect().top;
+        remesasPage().find('ion-content').then(($c) => ($c[0] as HTMLIonContentElement).scrollToBottom(0));
+        cy.wait(300);
+        remesasPage().find('.app-search').should(($s) => expect($s[0].getBoundingClientRect().top).to.eq(searchTop));
+        remesasPage().find('.remesas-item').first().should(($r) => expect($r[0].getBoundingClientRect().top).to.be.lessThan(rowTop));
+      });
+    });
+  });
 });

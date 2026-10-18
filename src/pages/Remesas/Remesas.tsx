@@ -12,6 +12,7 @@ import {
   useIonToast,
 } from '@ionic/react';
 import FilterChips, { type FilterOption } from '../../components/FilterChips';
+import ListPageHeader from '../../components/ListPageHeader';
 import PageTitleBar from '../../components/PageTitleBar';
 import RndcStatus from '../../components/RndcStatus';
 import SearchBar from '../../components/SearchBar';
@@ -69,37 +70,37 @@ const Remesas: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent fullscreen>
-        <div className="px-5 pt-[max(56px,calc(var(--ion-safe-area-top)+9px))]">
-          <PageTitleBar title="Remesas" addLabel="Nueva remesa" onAdd={comingSoon} />
+      <ListPageHeader>
+        <PageTitleBar title="Remesas" addLabel="Nueva remesa" onAdd={comingSoon} />
 
-          <SearchBar
-            className="mt-4.5"
-            placeholder="Buscar por número, cliente o NIT"
-            value={query}
-            onChange={setQuery}
-          />
+        <SearchBar
+          className="mt-4.5"
+          placeholder="Buscar por número, cliente o NIT"
+          value={query}
+          onChange={setQuery}
+        />
 
-          <FilterChips
-            className="mt-4.5"
-            options={filtros}
-            value={filtro}
-            onChange={setFiltro}
-            ariaLabel="Filtrar por estado"
-          />
+        <FilterChips
+          className="mt-4.5"
+          options={filtros}
+          value={filtro}
+          onChange={setFiltro}
+          ariaLabel="Filtrar por estado"
+        />
 
-          {pendientesRndc > 0 && (
-            <div className="mt-4.5 flex items-center justify-between gap-3 rounded-2xl bg-rndc-pendiente-soft py-3 ps-4 pe-3.5">
-              <p className="m-0 text-[14px] leading-4.75 font-medium text-tinta">
-                {pendientesRndc} {pendientesRndc === 1 ? 'remesa pendiente' : 'remesas pendientes'} por enviar al RNDC
-              </p>
-              <IonButton className="remesas-send shrink-0 text-[14px] font-semibold tracking-normal normal-case" onClick={comingSoon}>
-                Enviar
-              </IonButton>
-            </div>
-          )}
-        </div>
+        {pendientesRndc > 0 && (
+          <div className="mt-4.5 mb-1 flex items-center justify-between gap-3 rounded-2xl bg-rndc-pendiente-soft py-3 ps-4 pe-3.5">
+            <p className="m-0 text-[14px] leading-4.75 font-medium text-tinta">
+              {pendientesRndc} {pendientesRndc === 1 ? 'remesa pendiente' : 'remesas pendientes'} por enviar al RNDC
+            </p>
+            <IonButton className="remesas-send shrink-0 text-[14px] font-semibold tracking-normal normal-case" onClick={comingSoon}>
+              Enviar
+            </IonButton>
+          </div>
+        )}
+      </ListPageHeader>
 
+      <IonContent>
         {grupos.length > 0 ? (
           <IonList lines="none" className="remesas-list">
             {grupos.map((grupo) => (

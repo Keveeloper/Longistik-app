@@ -13,10 +13,9 @@
   margin: 0;
 }
 
-/* Ionic's scoped .list-md padding and margin beat Tailwind utilities */
+/* Ionic's scoped .list-md padding beats Tailwind utilities */
 ion-list.remesas-list {
   padding: 0;
-  margin-top: 4px;
 }
 
 /* Day headings ("Hoy · Ago 22"): plain text, no Ionic divider chrome */

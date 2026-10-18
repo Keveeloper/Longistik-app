@@ -1,0 +1,5 @@
+/* Plain white header: no md drop shadow (the designs have none) */
+ion-header.list-page-header {
+  background: var(--ion-background-color);
+  box-shadow: none;
+}

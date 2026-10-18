@@ -11,6 +11,7 @@ Longistik is an **Ionic 9 + React 19 + Vite 8 + Capacitor 8** app (TypeScript) f
 - Remesas and novedades mock dates are relative to now (`isoDateDaysAgo`, `isoDateTimeMinutesAgo`), so "Hoy" and "Hace 25 min" stay realistic.
 
 Shared pieces for list screens in `src/components/`:
+- `ListPageHeader`: an `IonHeader` that holds the fixed top area (title, search, filters, summary/callout). Only the `IonContent` below it (the items) scrolls. Manifiestos and Remesas use it, and their `IonContent` has no `fullscreen`, so content starts below the header. Novedades still scrolls as a whole.
 - `PageTitleBar` (large title + green "+" button)
 - `SearchBar` (styled `IonSearchbar`, class `app-search`)
 - `FilterChips` (single-select `IonChip`s that scroll horizontally when they overflow)

@@ -45,4 +45,17 @@ describe('Manifiestos (mock data)', () => {
     rows().should('have.length', 2);
     cy.contains('2 manifiestos · últimos 7 días').should('be.visible');
   });
+
+  it('keeps the header fixed while only the items scroll', () => {
+    manifiestosPage().find('.app-search').then(($search) => {
+      const searchTop = $search[0].getBoundingClientRect().top;
+      manifiestosPage().find('.manifiestos-item').first().then(($row) => {
+        const rowTop = $row[0].getBoundingClientRect().top;
+        manifiestosPage().find('ion-content').then(($c) => ($c[0] as HTMLIonContentElement).scrollToBottom(0));
+        cy.wait(300);
+        manifiestosPage().find('.app-search').should(($s) => expect($s[0].getBoundingClientRect().top).to.eq(searchTop));
+        manifiestosPage().find('.manifiestos-item').first().should(($r) => expect($r[0].getBoundingClientRect().top).to.be.lessThan(rowTop));
+      });
+    });
+  });
 });

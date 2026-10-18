@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { IonContent, IonIcon, IonItem, IonLabel, IonList, IonPage, useIonToast } from '@ionic/react';
 import FilterChips, { type FilterOption } from '../../components/FilterChips';
+import ListPageHeader from '../../components/ListPageHeader';
 import PageTitleBar from '../../components/PageTitleBar';
 import RndcStatus from '../../components/RndcStatus';
 import SearchBar from '../../components/SearchBar';
@@ -40,30 +41,30 @@ const Manifiestos: React.FC = () => {
 
   return (
     <IonPage>
-      <IonContent fullscreen>
-        <div className="px-5 pt-[max(56px,calc(var(--ion-safe-area-top)+9px))]">
-          <PageTitleBar title="Manifiestos" addLabel="Nuevo manifiesto" onAdd={comingSoon} />
+      <ListPageHeader>
+        <PageTitleBar title="Manifiestos" addLabel="Nuevo manifiesto" onAdd={comingSoon} />
 
-          <SearchBar
-            className="mt-4.5"
-            placeholder="Buscar por número, ruta o placa"
-            value={query}
-            onChange={setQuery}
-          />
+        <SearchBar
+          className="mt-4.5"
+          placeholder="Buscar por número, ruta o placa"
+          value={query}
+          onChange={setQuery}
+        />
 
-          <FilterChips
-            className="mt-4.5"
-            options={filtros}
-            value={filtro}
-            onChange={setFiltro}
-            ariaLabel="Filtrar por estado"
-          />
+        <FilterChips
+          className="mt-4.5"
+          options={filtros}
+          value={filtro}
+          onChange={setFiltro}
+          ariaLabel="Filtrar por estado"
+        />
 
-          <p className="mt-3.5 mb-0 text-[13px] leading-4 text-muted">
-            {manifiestos.length} {manifiestos.length === 1 ? 'manifiesto' : 'manifiestos'} · últimos 7 días
-          </p>
-        </div>
+        <p className="mt-3.5 mb-0 text-[13px] leading-4 text-muted">
+          {manifiestos.length} {manifiestos.length === 1 ? 'manifiesto' : 'manifiestos'} · últimos 7 días
+        </p>
+      </ListPageHeader>
 
+      <IonContent>
         {manifiestos.length > 0 ? (
           <IonList lines="full" className="manifiestos-list">
             {manifiestos.map((m) => (
