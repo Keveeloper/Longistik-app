@@ -3,6 +3,7 @@ import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } 
 import ComingSoon from '../components/ComingSoon';
 import { icons } from '../icons';
 import Home from '../pages/Home/Home';
+import Manifiestos from '../pages/Manifiestos/Manifiestos';
 import './TabsLayout.css';
 
 const tabs = [
@@ -17,7 +18,7 @@ const TabsLayout: React.FC = () => (
   <IonTabs>
     <IonRouterOutlet>
       <Route path="/inicio" element={<Home />} />
-      <Route path="/manifiestos" element={<ComingSoon title="Manifiestos" />} />
+      <Route path="/manifiestos" element={<Manifiestos />} />
       <Route path="/remesas" element={<ComingSoon title="Remesas" />} />
       <Route path="/novedades" element={<ComingSoon title="Novedades" />} />
       <Route path="/" element={<Navigate to="/inicio" replace />} />

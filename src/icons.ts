@@ -12,6 +12,8 @@ import eye from '@tabler/icons/outline/eye.svg';
 import fileDescription from '@tabler/icons/outline/file-description.svg';
 import helpCircle from '@tabler/icons/outline/help-circle.svg';
 import logout from '@tabler/icons/outline/logout.svg';
+import plus from '@tabler/icons/outline/plus.svg';
+import search from '@tabler/icons/outline/search.svg';
 import truck from '@tabler/icons/outline/truck.svg';
 // Custom variants of Tabler icons, matching the designs
 import home from './assets/icons/home-simple.svg';
@@ -27,5 +29,7 @@ export const icons = {
   helpCircle,
   home,
   logout,
+  plus,
+  search,
   truck,
 };

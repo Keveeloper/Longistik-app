@@ -69,7 +69,7 @@ const Home: React.FC = () => {
     <IonPage>
       <IonContent fullscreen>
         {/* Header */}
-        <header className="bg-tinta px-5 pt-[max(54px,calc(var(--ion-safe-area-top)+7px))] pb-[26px]">
+        <header className="bg-tinta px-5 pt-[max(54px,calc(var(--ion-safe-area-top)+7px))] pb-6.5">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -81,7 +81,7 @@ const Home: React.FC = () => {
                 {initials(user?.name ?? '')}
               </IonAvatar>
             </button>
-            <div className="-mr-[2px] flex">
+            <div className="-mr-0.5 flex">
               <IonButton fill="clear" className="home-header-button" aria-label="Mostrar valores" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.eye} />
               </IonButton>
@@ -91,11 +91,11 @@ const Home: React.FC = () => {
               <IonButton fill="clear" className="home-header-button relative" aria-label="Notificaciones" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.bell} />
                 {/* Unread dot */}
-                <span className="absolute top-[12px] right-[1px] h-2 w-2 rounded-full bg-cielo" />
+                <span className="absolute top-3 right-px h-2 w-2 rounded-full bg-cielo" />
               </IonButton>
             </div>
           </div>
-          <h1 className="mt-5 mb-0 text-[22px] leading-[26px] font-semibold text-white">Hola, {firstName}</h1>
+          <h1 className="mt-5 mb-0 text-[22px] leading-6.5 font-semibold text-white">Hola, {firstName}</h1>
           <p className="mt-1 mb-0 text-[14px] leading-5 text-cielo">{user?.company}</p>
         </header>
 
@@ -111,26 +111,26 @@ const Home: React.FC = () => {
               <IonIcon icon={icons.chevronRight} className="text-[20px] text-muted" />
               <IonRippleEffect />
             </button>
-            <p className="mt-[10px] mb-0 text-[31px] leading-9 font-semibold tracking-[-1px] text-tinta">{summary.remesasHoy} remesas</p>
+            <p className="mt-2.5 mb-0 text-[31px] leading-9 font-semibold tracking-[-1px] text-tinta">{summary.remesasHoy} remesas</p>
             <p className="mt-1 mb-0 text-[14px] leading-5 text-muted">
               {summary.manifiestosDespachados} manifiestos despachados · {todayLabel()}
             </p>
           </section>
 
           {/* Quick actions */}
-          <nav className="mt-[22px] flex justify-between" aria-label="Acciones rápidas">
+          <nav className="mt-5.5 flex justify-between" aria-label="Acciones rápidas">
             {quickActions.map(({ label, icon }) => (
               <button
                 key={label}
                 type="button"
                 onClick={comingSoon}
-                className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
+                className="flex w-19 cursor-pointer flex-col items-center border-0 bg-transparent p-0"
               >
                 <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
                   <IonIcon icon={icon} className="text-[26px] text-tinta" />
                   <IonRippleEffect />
                 </span>
-                <span className="mt-2 text-[13px] leading-[17px] text-tinta">{label}</span>
+                <span className="mt-2 text-[13px] leading-4.25 text-tinta">{label}</span>
               </button>
             ))}
           </nav>
@@ -142,14 +142,14 @@ const Home: React.FC = () => {
           </IonItem>
 
           {/* Pending RNDC callout */}
-          <div className="mt-5 rounded-2xl bg-rndc-pendiente-soft px-[18px] pt-4 pb-[14px]">
+          <div className="mt-5 rounded-2xl bg-rndc-pendiente-soft px-4.5 pt-4 pb-3.5">
             <p className="m-0 text-[15px] leading-5 font-medium text-tinta">
               Tienes {summary.remesasPendientesRndc} remesas pendientes por enviar al RNDC
             </p>
             <button
               type="button"
               onClick={comingSoon}
-              className="mt-[5px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
+              className="mt-1.25 cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
             >
               Revisar y enviar
             </button>
@@ -157,7 +157,7 @@ const Home: React.FC = () => {
         </div>
 
         {/* Reporte RNDC */}
-        <section className="mt-6 border-t border-divider px-5 pt-[23px] pb-[11px]">
+        <section className="mt-6 border-t border-divider px-5 pt-5.75 pb-2.75">
           <button
             type="button"
             onClick={comingSoon}

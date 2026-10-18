@@ -50,16 +50,16 @@ const Login: React.FC = () => {
     <IonPage>
       <IonContent fullscreen>
         <div className="flex min-h-full flex-col px-6 pt-[max(74px,calc(var(--ion-safe-area-top)+24px))] pb-[max(32px,calc(var(--ion-safe-area-bottom)+12px))]">
-          <img src={logo} alt="Longistik" className="h-[30px] w-auto self-start" />
+          <img src={logo} alt="Longistik" className="h-7.5 w-auto self-start" />
 
-          <h1 className="mt-[60px] mb-0 text-[31px] leading-[38px] font-semibold text-tinta">
+          <h1 className="mt-15 mb-0 text-[31px] leading-9.5 font-semibold text-tinta">
             Tu operación de carga, en tu bolsillo.
           </h1>
           <p className="mt-3 mb-0 text-body text-muted">
             Manifiestos, remesas y novedades sincronizados con el RNDC.
           </p>
 
-          <form onSubmit={handleSubmit} noValidate className="mt-[44px] flex flex-1 flex-col">
+          <form onSubmit={handleSubmit} noValidate className="mt-11 flex flex-1 flex-col">
             <label className="block">
               <span className="block text-caption font-medium text-muted">Correo o usuario</span>
               <IonInput
@@ -75,7 +75,7 @@ const Login: React.FC = () => {
               />
             </label>
 
-            <label className="mt-[29px] block">
+            <label className="mt-7.25 block">
               <span className="block text-caption font-medium text-muted">Contraseña</span>
               <IonInput
                 className="login-field"
@@ -99,7 +99,7 @@ const Login: React.FC = () => {
             <button
               type="button"
               onClick={comingSoon}
-              className="mt-[30px] cursor-pointer self-start border-0 bg-transparent p-0 text-[15px] font-semibold text-secondary"
+              className="mt-7.5 cursor-pointer self-start border-0 bg-transparent p-0 text-[15px] font-semibold text-secondary"
             >
               ¿Olvidaste tu contraseña?
             </button>
@@ -129,7 +129,7 @@ const Login: React.FC = () => {
             </IonButton>
           </form>
 
-          <p className="mx-auto mt-6 mb-0 max-w-[320px] text-center text-xs leading-4 text-muted">
+          <p className="mx-auto mt-6 mb-0 max-w-80 text-center text-xs leading-4 text-muted">
             DEBUGPLOY S.A.S. · Conectado al RNDC del Ministerio de Transporte
           </p>
         </div>
