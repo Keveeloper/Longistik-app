@@ -1,9 +1,10 @@
 import { Navigate, Route } from 'react-router-dom';
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
-import ComingSoon from '../components/ComingSoon';
 import { icons } from '../icons';
 import Home from '../pages/Home/Home';
 import Manifiestos from '../pages/Manifiestos/Manifiestos';
+import Novedades from '../pages/Novedades/Novedades';
+import Remesas from '../pages/Remesas/Remesas';
 import './TabsLayout.css';
 
 const tabs = [
@@ -19,8 +20,8 @@ const TabsLayout: React.FC = () => (
     <IonRouterOutlet>
       <Route path="/inicio" element={<Home />} />
       <Route path="/manifiestos" element={<Manifiestos />} />
-      <Route path="/remesas" element={<ComingSoon title="Remesas" />} />
-      <Route path="/novedades" element={<ComingSoon title="Novedades" />} />
+      <Route path="/remesas" element={<Remesas />} />
+      <Route path="/novedades" element={<Novedades />} />
       <Route path="/" element={<Navigate to="/inicio" replace />} />
     </IonRouterOutlet>
     <IonTabBar slot="bottom" className="app-tab-bar">

@@ -1,39 +1,5 @@
 /* Ionic component internals for Manifiestos (layout lives in Tailwind classes) */
 
-/* "+" round action button */
-.manifiestos-add {
-  --border-radius: 9999px;
-  --box-shadow: none;
-  --padding-start: 0;
-  --padding-end: 0;
-  width: 44px;
-  height: 44px;
-  margin: 0;
-}
-
-.manifiestos-add ion-icon {
-  font-size: 24px;
-}
-
-/* Pill search field on superficie */
-.manifiestos-search {
-  --background: var(--ion-color-light);
-  --border-radius: 9999px;
-  --box-shadow: none;
-  --color: var(--ion-color-dark);
-  --placeholder-color: var(--ion-color-medium);
-  --placeholder-opacity: 1;
-  --icon-color: var(--ion-color-medium);
-  height: 48px;
-  padding: 0;
-}
-
-/* Higher specificity than Ionic's scoped searchbar styles, which load later */
-ion-searchbar.manifiestos-search .searchbar-input-container {
-  height: 48px;
-}
-
-
 /* Ionic's scoped .list-md padding beats Tailwind utilities */
 ion-list.manifiestos-list {
   padding: 0;
@@ -47,17 +13,4 @@ ion-list.manifiestos-list {
   --border-color: var(--app-divider-color);
   --background-activated: var(--ion-color-dark);
   --background-activated-opacity: 0.04;
-}
-
-ion-searchbar.manifiestos-search .searchbar-input {
-  height: 48px;
-  padding-inline-start: 49px;
-  font-size: 15px;
-}
-
-ion-searchbar.manifiestos-search .searchbar-search-icon {
-  top: 15px;
-  inset-inline-start: 17px;
-  width: 18px;
-  height: 18px;
 }

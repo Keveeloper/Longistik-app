@@ -4,7 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Longistik is an **Ionic 9 + React 19 + Vite 8 + Capacitor 8** app (TypeScript) for cargo operations synced with Colombia's RNDC. Screens are built one at a time from the design PNGs. Done: Login (`src/pages/Login`), Inicio (`src/pages/Home`) and Manifiestos (`src/pages/Manifiestos`, a list with client-side search and estado filter), backed by a mock session. The Remesas and Novedades tabs render `src/components/ComingSoon.tsx` placeholders. Data is mocked: Home uses a hardcoded `summary` object and Manifiestos uses `src/data/manifiestos.mock.ts` (TODO: API). Shared pieces: `StatusBadge` (IonBadge with the "Estados" color pairs), `RndcStatus` (dot + "RNDC reportado"/"Pendiente RNDC"), and `src/utils/format.ts` (`formatCOP` → "$800.000", `formatShortDate` → "Ago 22"). No native platforms (`android/`, `ios/`) have been added yet.
+Longistik is an **Ionic 9 + React 19 + Vite 8 + Capacitor 8** app (TypeScript) for cargo operations synced with Colombia's RNDC. Screens are built one at a time from the design PNGs. Done: Login (`src/pages/Login`), Inicio (`src/pages/Home`), Manifiestos (`src/pages/Manifiestos`), Remesas (`src/pages/Remesas`, grouped by day) and Novedades (`src/pages/Novedades`, an `IonSegment` switching Abiertas/Cerradas), backed by a mock session.
+- Manifiestos and Remesas have client-side search and estado filters.
+- Pending designs: 04 Detalle de manifiesto, 06 Detalle de remesa and 08 Reportar novedad. Their entry points (row taps, "+" buttons) show a "Disponible próximamente" toast.
+- Data is mocked: Home uses a hardcoded `summary` object, and the lists use `src/data/*.mock.ts` (TODO: API).
+- Remesas and novedades mock dates are relative to now (`isoDateDaysAgo`, `isoDateTimeMinutesAgo`), so "Hoy" and "Hace 25 min" stay realistic.
+
+Shared pieces for list screens in `src/components/`:
+- `PageTitleBar` (large title + green "+" button)
+- `SearchBar` (styled `IonSearchbar`, class `app-search`)
+- `FilterChips` (single-select `IonChip`s that scroll horizontally when they overflow)
+- `StatusBadge` (`IonBadge` with the "Estados" color pairs; accepts `slot`). Novedades states reuse them: `abierta` → en-ruta, `en-gestion` → creada, `cerrada` → cumplido.
+- `RndcStatus` (dot + label, with an optional `label` override)
+
+Helpers in `src/utils/`:
+- `format.ts`: `formatCOP` → "$800.000", `formatShortDate` → "Ago 22", `formatDayHeading` → "Hoy · Ago 22", `formatTimeAgo` → "Hace 25 min"
+- `search.ts`: `matchesQuery`, case- and accent-insensitive
+
+Both are unit-tested in `src/utils/format.test.ts`.
+
+Reuse these for new list screens rather than restyling Ionic components. No native platforms (`android/`, `ios/`) have been added yet.
 
 ## Commands
 
@@ -33,10 +52,13 @@ Capacitor (native): `npm run build` then `npx cap add android|ios` / `npx cap sy
 - **Auth/session**: `src/store/auth.store.ts` (Zustand + `persist`) holds `token`/`user`, persisted via `@capacitor/preferences` (`src/storage/preferencesStorage.ts`; native storage on device, localStorage on web). That storage is async, so `App.tsx` renders a spinner until `hasHydrated` is true, which keeps the guard from misrouting. The guard is `AppRoutes` in `App.tsx`: it sits outside the outlet, compares the session with the active pathname, and `navigate(..., { replace: true })`s guests to `/login` and signed-in users away from `/login` (to `HOME_PATH` = `/inicio`). **Login/logout navigation is driven only by this guard**: components just call `setSession()` / `logout()`. Don't also navigate imperatively, or the redirects race. `src/api/client.ts` is the shared axios instance: it adds `Authorization: Bearer <token>` and calls `logout()` on any 401. `src/services/auth.service.ts` uses a mock whenever `VITE_API_URL` is empty (see `.env.example`); the mock accepts any credentials except the password `error`. Outside React, read the store with `useAuthStore.getState()`.
 - **Pages** follow the Ionic pattern `IonPage > IonContent` (plus `IonHeader` where the design has a toolbar), with a co-located `.css` file per page for Ionic internals (CSS variables, `::part`). Prefer Ionic components (`IonItem`, `IonProgressBar`, `IonAvatar`, `IonButton`, `IonTabBar`, `useIonToast`/`useIonActionSheet`) and use plain HTML + Tailwind only for very custom pieces. Add `ion-activatable` + `<IonRippleEffect />` for touch feedback on custom buttons. **Ionic's scoped component CSS (e.g. `ion-label`, `ion-list`, `ion-searchbar`, `ion-input`) is unlayered, so it beats Tailwind utilities placed on those elements**, and it is injected after the page CSS, so it also wins ties. Known cases:
   - `.item ion-label` inherits `font-size` from the item, so set it on the `ion-item`.
-  - `.list-md` keeps its 8px padding despite `py-0`, so use `ion-list.my-class { padding: 0 }`.
+  - `.list-md` resets padding and margin, overriding `py-0`/`mt-*`, so set both in CSS (`ion-list.my-class { padding: 0; margin-top: 4px }`).
   - The searchbar's internals need selectors like `ion-searchbar.my-class .searchbar-input`.
   - Inside `IonLabel`, use `div`/`span`, not `h2`/`p`, because Ionic restyles those.
+  - `ion-label` is `white-space: nowrap` inside items, so multi-line text needs `whitespace-normal` on a child.
+  - To top-align item content, use `ion-item.x::part(native) { align-items: flex-start }`.
+  - `IonSegment` pill style (`src/pages/Novedades/Novedades.css`): `--indicator-height` must be a length (`40px`), because `100%` resolves to 0. Also reset the md uppercase/letter-spacing, and the label's margin.
 
   In contrast, **shadow-DOM components (`IonBadge`, `IonChip`, `IonButton`) do take Tailwind classes on the host**: outer styles beat their `:host` rules. With Ionic custom elements, pass ARIA booleans as strings (`aria-pressed={selected ? 'true' : 'false'}`), because React 19 doesn't serialize `true` for custom elements. The tab bar (`src/layouts/TabsLayout.css`) is 56px plus the bottom safe area minus 7px (83px on an iPhone, as designed). Logout lives in the account action sheet opened from the Inicio avatar. The mock login always returns the demo user "Andrés Rojas" / "Transportes del Valle S.A.S." (`User` has a `company` field).
-- **Testing**: Vitest uses jsdom with globals enabled (config lives in `vite.config.ts` under `test`; setup in `src/setupTests.ts`). Cypress e2e specs live in `cypress/e2e/` (`auth.cy.ts` covers the login flow, `manifiestos.cy.ts` covers search and filters; `cy.login()` in `cypress/support/commands.ts` logs in through the UI with the mock; the default viewport is the 390×844 phone from the designs). Navigation tests must assert that the URL is **stable** (see `expectStableAt`: pathname and `history.length` unchanged after a wait) and that content is **`be.visible`**: a redirect loop can pass a plain pathname check mid-loop, and a page stuck at opacity 0 still passes `cy.contains`. Ionic doesn't reflect props like `type` onto the `ion-input` host and moves `aria-label` to the inner element, so select native elements (`input[autocomplete="username"]`, `input[type="password"]`). `ion-button` uses Shadow DOM, so reaching its inner `button` needs `{ includeShadowDom: true }`.
+- **Testing**: Vitest uses jsdom with globals enabled (config lives in `vite.config.ts` under `test`; setup in `src/setupTests.ts`). Cypress e2e specs live in `cypress/e2e/` (`auth.cy.ts` covers the login flow, `manifiestos.cy.ts`/`remesas.cy.ts`/`novedades.cy.ts` cover the list screens; scope queries to the page under test, e.g. `cy.contains("h1", "Remesas").closest(".ion-page")`, because other visited pages stay mounted (hidden) and can match; `cy.login()` in `cypress/support/commands.ts` logs in through the UI with the mock; the default viewport is the 390×844 phone from the designs). Navigation tests must assert that the URL is **stable** (see `expectStableAt`: pathname and `history.length` unchanged after a wait) and that content is **`be.visible`**: a redirect loop can pass a plain pathname check mid-loop, and a page stuck at opacity 0 still passes `cy.contains`. Ionic doesn't reflect props like `type` onto the `ion-input` host and moves `aria-label` to the inner element, so select native elements (`input[autocomplete="username"]`, `input[type="password"]`). `ion-button` uses Shadow DOM, so reaching its inner `button` needs `{ includeShadowDom: true }`.
 - **Build**: `@vitejs/plugin-legacy` produces legacy-browser bundles per `.browserslistrc`.

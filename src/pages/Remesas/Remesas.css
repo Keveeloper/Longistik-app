@@ -1,0 +1,41 @@
+/* Ionic component internals for Remesas (layout lives in Tailwind classes) */
+
+/* White "Enviar" pill inside the pending-RNDC callout */
+.remesas-send {
+  --background: #ffffff;
+  --background-activated: #ffffff;
+  --color: var(--color-en-ruta);
+  --border-radius: 9999px;
+  --box-shadow: none;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  height: 36px;
+  margin: 0;
+}
+
+/* Ionic's scoped .list-md padding and margin beat Tailwind utilities */
+ion-list.remesas-list {
+  padding: 0;
+  margin-top: 4px;
+}
+
+/* Day headings ("Hoy · Ago 22"): plain text, no Ionic divider chrome */
+.remesas-day {
+  --background: transparent;
+  --color: var(--ion-color-medium);
+  --padding-start: 20px;
+  --inner-padding-end: 20px;
+  min-height: 0;
+  border: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Rows without dividers, 81px tall */
+.remesas-item {
+  --padding-start: 20px;
+  --inner-padding-end: 20px;
+  --min-height: 81px;
+  --background-activated: var(--ion-color-dark);
+  --background-activated-opacity: 0.04;
+}

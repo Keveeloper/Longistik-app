@@ -51,12 +51,12 @@ describe('Auth flow (mock service)', () => {
     // Switching tabs must not be hijacked by a stale redirect
     cy.get('ion-tab-button[tab="remesas"]').click();
     expectStableAt('/remesas');
-    cy.contains('ion-content', 'Remesas: pantalla en construcción').should('be.visible');
+    cy.contains('h1', 'Remesas').should('be.visible');
 
     // Session persisted: reload stays inside the app
     cy.reload();
     expectStableAt('/remesas');
-    cy.contains('ion-content', 'Remesas: pantalla en construcción').should('be.visible');
+    cy.contains('h1', 'Remesas').should('be.visible');
 
     // Logged-in users can't go back to /login
     cy.visit('/login');
