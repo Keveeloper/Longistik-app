@@ -22,7 +22,9 @@ export interface Manifiesto {
   fechaExpedicion: string;
   estado: EstadoManifiesto;
   estadoRndc: EstadoRndc;
+  vehiculoId: number;
   placa: string;
+  /** Driver saved on the manifiesto when it was issued (older ones: the vehicle's current driver) */
   conductor: { id: number; nombre: string } | null;
   origen: Municipio | null;
   destino: Municipio | null;
@@ -90,8 +92,14 @@ export interface RndcReporte {
 }
 
 export const operationsService = {
-  /** `q`: number, RNDC consecutive, plate, or driver name/document. */
-  async manifiestos(params: PageParams & { estado?: EstadoManifiesto; estadoRndc?: EstadoRndc; q?: string } = {}) {
+  /**
+   * Only what the user's alcance allows (filtered by the backend). `vehiculoId` must be one
+   * of the user's vehicles when alcance is "asignados" (else 404). `q`: number, RNDC
+   * consecutive, plate, or driver name/document.
+   */
+  async manifiestos(
+    params: PageParams & { estado?: EstadoManifiesto; estadoRndc?: EstadoRndc; vehiculoId?: number; q?: string } = {}
+  ) {
     const { data } = await api.get<Page<Manifiesto>>('/mobile/manifiestos', { params });
     return data;
   },
@@ -114,7 +122,10 @@ export const operationsService = {
     return data;
   },
 
-  /** Sends up to 50 remesas to the RNDC, one by one; resolves when all are done (can take a while). */
+  /**
+   * Needs `rndc.enviar` (else 403 FORBIDDEN). Sends up to 50 remesas to the RNDC, one by one;
+   * resolves when all are done (can take a while). Remesas the user can't see come back as errors.
+   */
   async enviarRndc(remesaIds: number[]) {
     const { data } = await api.post<{ resultados: RndcResultado[] }>(
       '/mobile/rndc/enviar',

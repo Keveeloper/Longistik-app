@@ -19,7 +19,8 @@ import {
 import { useCallback, useState } from 'react';
 import { apiErrorMessage } from '../../api/client';
 import { icons } from '../../icons';
-import { fullName } from '../../services/auth.service';
+import { useAppResume } from '../../hooks/useAppResume';
+import { fullName, hasPermiso, type Permiso } from '../../services/auth.service';
 import { homeService, type HomeSummary } from '../../services/home.service';
 import { useAuthStore } from '../../store/auth.store';
 import { useCompanyStore } from '../../store/company.store';
@@ -32,11 +33,12 @@ const Skeleton: React.FC<{ width: string }> = ({ width }) => (
   <IonSkeletonText animated className="inline-block align-middle" style={{ width, height: '0.8em' }} />
 );
 
-const quickActions = [
-  { label: 'Nuevo manifiesto', icon: icons.truck },
-  { label: 'Nueva remesa', icon: icons.fileDescription },
-  { label: 'Reportar novedad', icon: icons.alertTriangle },
-  { label: 'Cumplir remesa', icon: icons.clipboardCheck },
+// Each action shows only when the user's role grants its permission
+const quickActions: { label: string; icon: string; permiso: Permiso }[] = [
+  { label: 'Nuevo manifiesto', icon: icons.truck, permiso: 'manifiestos.crear' },
+  { label: 'Nueva remesa', icon: icons.fileDescription, permiso: 'remesas.crear' },
+  { label: 'Reportar novedad', icon: icons.alertTriangle, permiso: 'novedades.reportar' },
+  { label: 'Cumplir remesa', icon: icons.clipboardCheck, permiso: 'remesas.cumplir' },
 ];
 
 const initials = (name: string) =>
@@ -60,6 +62,10 @@ const Home: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const name = user ? fullName(user) : '';
+  const actions = quickActions.filter(({ permiso }) => hasPermiso(user, permiso));
+  // Nothing to show: the role sees no manifiestos, or only assigned ones and has no vehicle
+  const noAccess = user?.alcance === 'ninguno' || (user?.alcance === 'asignados' && !user.vehiculos?.length);
+  const placas = user?.alcance === 'asignados' ? user.vehiculos?.map((v) => v.placa).join(', ') : '';
 
   const loadSummary = useCallback(async () => {
     try {
@@ -74,6 +80,8 @@ const Home: React.FC = () => {
   useIonViewWillEnter(() => {
     loadSummary();
   }, [loadSummary]);
+  // Figures depend on the assigned vehicles, which may change while the app is in the background
+  useAppResume(loadSummary);
 
   const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
     await loadSummary();
@@ -87,7 +95,7 @@ const Home: React.FC = () => {
   const openAccountMenu = () =>
     presentActionSheet({
       header: name,
-      subHeader: companyName,
+      subHeader: [companyName, placas].filter(Boolean).join(' · '),
       buttons: [
         // Clearing the session is enough: the route guard redirects to /login
         { text: 'Cerrar sesión', role: 'destructive', icon: icons.logout, handler: () => logout() },
@@ -149,6 +157,15 @@ const Home: React.FC = () => {
             </div>
           )}
 
+          {noAccess && (
+            <div className="mt-4 flex items-start gap-3 rounded-2xl bg-superficie px-4 py-3">
+              <IonIcon icon={icons.truck} className="mt-[2px] shrink-0 text-[22px] text-tinta" aria-hidden="true" />
+              <p className="m-0 text-[14px] leading-5 text-tinta">
+                No tienes vehículos asignados. Pídele a tu administrador que te asigne uno.
+              </p>
+            </div>
+          )}
+
           {/* Operación de hoy */}
           <section className="pt-6">
             <button
@@ -173,34 +190,38 @@ const Home: React.FC = () => {
             </p>
           </section>
 
-          {/* Quick actions */}
-          <nav className="mt-[22px] flex justify-between" aria-label="Acciones rápidas">
-            {quickActions.map(({ label, icon }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={comingSoon}
-                className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
-              >
-                <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
-                  <IonIcon icon={icon} className="text-[26px] text-tinta" />
-                  <IonRippleEffect />
-                </span>
-                <span className="mt-2 text-[13px] leading-[17px] text-tinta">{label}</span>
-              </button>
-            ))}
-          </nav>
+          {/* Quick actions. The gap matches the design's spacing of four 76px buttons, so fewer stay left-aligned */}
+          {actions.length > 0 && (
+            <nav className="mt-[22px] flex gap-x-[calc((100%-304px)/3)]" aria-label="Acciones rápidas">
+              {actions.map(({ label, icon }) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={comingSoon}
+                  className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
+                >
+                  <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
+                    <IonIcon icon={icon} className="text-[26px] text-tinta" />
+                    <IonRippleEffect />
+                  </span>
+                  <span className="mt-2 text-[13px] leading-[17px] text-tinta">{label}</span>
+                </button>
+              ))}
+            </nav>
+          )}
 
           {/* Mis manifiestos activos */}
-          <IonItem button detail={false} lines="none" className="home-row mt-5" onClick={comingSoon}>
-            <IonIcon slot="start" icon={icons.alignJustified} />
-            <IonLabel>Mis manifiestos activos</IonLabel>
-            {!!summary?.manifiestosActivos && (
-              <span slot="end" className="home-row-count">
-                {summary.manifiestosActivos}
-              </span>
-            )}
-          </IonItem>
+          {!noAccess && (
+            <IonItem button detail={false} lines="none" className="home-row mt-5" onClick={comingSoon}>
+              <IonIcon slot="start" icon={icons.alignJustified} />
+              <IonLabel>Mis manifiestos activos</IonLabel>
+              {!!summary?.manifiestosActivos && (
+                <span slot="end" className="home-row-count">
+                  {summary.manifiestosActivos}
+                </span>
+              )}
+            </IonItem>
+          )}
 
           {/* Pending RNDC callout: only when there is something to send */}
           {!!summary?.remesasPendientesRndc && (
@@ -209,13 +230,15 @@ const Home: React.FC = () => {
                 Tienes {plural(summary.remesasPendientesRndc, 'remesa pendiente', 'remesas pendientes')} por enviar al
                 RNDC
               </p>
-              <button
-                type="button"
-                onClick={comingSoon}
-                className="mt-[5px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
-              >
-                Revisar y enviar
-              </button>
+              {hasPermiso(user, 'rndc.enviar') && (
+                <button
+                  type="button"
+                  onClick={comingSoon}
+                  className="mt-[5px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
+                >
+                  Revisar y enviar
+                </button>
+              )}
             </div>
           )}
         </div>

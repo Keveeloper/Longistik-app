@@ -1,19 +1,54 @@
 // The panel and the company backend (request/mobile-api.md) are stubbed, so the suite runs without real accounts
 describe('Company + auth flow', () => {
-  const user = { id: 34, name: 'Andrés', lastName: 'Rojas', email: 'ana@longistik.com', role: 'despachador' };
+  const despachador = {
+    id: 34,
+    name: 'Andrés',
+    lastName: 'Rojas',
+    email: 'ana@longistik.com',
+    role: 'Despachador',
+    alcance: 'todos',
+    permisos: [
+      'app.acceso',
+      'manifiestos.ver_todos',
+      'manifiestos.crear',
+      'remesas.crear',
+      'remesas.cumplir',
+      'novedades.reportar',
+      'rndc.enviar',
+    ],
+    vehiculos: [],
+  };
+  const conductor = {
+    ...despachador,
+    role: 'Conductor',
+    alcance: 'asignados',
+    permisos: ['app.acceso', 'manifiestos.ver_asignados', 'remesas.cumplir', 'novedades.reportar'],
+    vehiculos: [{ id: 12, placa: 'ABC123', desde: '2026-10-21T00:00:00-05:00', hasta: null }],
+  };
 
-  beforeEach(() => {
-    cy.intercept('GET', '**/api/public/companies*', { fixture: 'companies.json' }).as('companies');
+  /** Login and /mobile/me answer with this user */
+  const stubUser = (user: object) => {
     cy.intercept('POST', '**/mobile/auth/login', (req) => {
       if (req.body.password === 'error') {
-        req.reply({ statusCode: 401, body: { statusCode: 401, message: 'Correo o contraseña incorrectos' } });
+        req.reply({
+          statusCode: 401,
+          body: { statusCode: 401, code: 'INVALID_CREDENTIALS', message: 'Correo o contraseña incorrectos' },
+        });
       } else {
         req.reply({ statusCode: 201, body: { accessToken: 'test.jwt.token', expiresIn: 2592000, user } });
       }
     }).as('login');
     cy.intercept('GET', '**/mobile/me', { body: { ...user, status: true } }).as('me');
+  };
+
+  beforeEach(() => {
+    cy.intercept('GET', '**/api/public/companies*', { fixture: 'companies.json' }).as('companies');
+    stubUser(despachador);
     cy.intercept('GET', '**/mobile/home/summary', { fixture: 'home-summary.json' }).as('summary');
   });
+
+  const quickActionLabels = () =>
+    cy.get('nav[aria-label="Acciones rápidas"] button').then(($b) => [...$b].map((b) => b.innerText.replace(/\s+/g, ' ')));
 
   const selectCompany = (name = 'Servicargas 360 S.A.S.') => cy.contains('ion-item', name).click();
 
@@ -132,13 +167,65 @@ describe('Company + auth flow', () => {
     login();
     expectStableAt('/inicio');
 
-    // On the next launch /mobile/me answers 403
+    // On the next launch /mobile/me answers 403 USER_INACTIVE
     const message = 'Tu usuario está inactivo. Contacta al administrador.';
-    cy.intercept('GET', '**/mobile/me', { statusCode: 403, body: { statusCode: 403, message } });
+    cy.intercept('GET', '**/mobile/me', { statusCode: 403, body: { statusCode: 403, code: 'USER_INACTIVE', message } });
     cy.reload();
     expectStableAt('/login');
     expectLoginVisible();
     cy.contains('[role="alert"]', message).should('be.visible');
+  });
+
+  it('keeps the session on a 403 FORBIDDEN (missing permission)', () => {
+    const message = 'No tienes permiso para esta acción.';
+    cy.intercept('GET', '**/mobile/home/summary', { statusCode: 403, body: { statusCode: 403, code: 'FORBIDDEN', message } });
+    cy.visit('/');
+    selectCompany();
+    login();
+    cy.contains('[role="alert"]', message).should('be.visible');
+    expectStableAt('/inicio');
+    expectAppVisible();
+  });
+
+  it('shows the despachador every action', () => {
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    quickActionLabels().should('deep.eq', ['Nuevo manifiesto', 'Nueva remesa', 'Reportar novedad', 'Cumplir remesa']);
+    cy.contains('button', 'Revisar y enviar').should('be.visible');
+  });
+
+  it('shows a conductor only their actions and vehicles', () => {
+    stubUser(conductor);
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    quickActionLabels().should('deep.eq', ['Reportar novedad', 'Cumplir remesa']);
+    cy.contains('Tienes 3 remesas pendientes').should('be.visible');
+    cy.contains('button', 'Revisar y enviar').should('not.exist');
+    cy.contains('No tienes vehículos asignados').should('not.exist');
+
+    cy.get('button[aria-label="Mi cuenta"]').click();
+    cy.get('ion-action-sheet').should('contain', 'ABC123');
+  });
+
+  it('tells a conductor without vehicles, and picks up a new assignment on resume', () => {
+    stubUser({ ...conductor, vehiculos: [] });
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    cy.contains('No tienes vehículos asignados').should('be.visible');
+    cy.contains('ion-item', 'Mis manifiestos activos').should('not.exist');
+
+    // The admin assigns a vehicle while the app is in the background
+    stubUser(conductor);
+    cy.document().then((doc) => doc.dispatchEvent(new Event('visibilitychange')));
+    cy.wait('@me');
+    cy.contains('No tienes vehículos asignados').should('not.exist');
+    cy.contains('ion-item', 'Mis manifiestos activos').should('be.visible');
   });
 
   it('requests a password reset email', () => {

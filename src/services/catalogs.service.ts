@@ -1,7 +1,9 @@
 /*
  * Form catalogs (P3 of request/mobile-api.md). Each accepts `q`, isn't paginated
- * and returns at most 50 matches. Not used yet: the create forms are still pending
- * on the backend.
+ * and returns at most 50 matches. clientes, productos and conductores need
+ * `manifiestos.crear` or `remesas.crear` (else 403 FORBIDDEN); vehiculos only lists
+ * the user's assigned vehicles when alcance is "asignados". Not used yet: the
+ * create forms are still pending on the backend.
  */
 import { api } from '../api/client';
 
