@@ -19,5 +19,13 @@ export const IS_TEST_ENV = APP_ENV === 'test';
  */
 export const TEST_COMPANY_CODES = ['finaltest'];
 
-export const isCompanyAllowed = (code: string, env: AppEnv = APP_ENV) =>
+/**
+ * Local backend for development (e.g. http://localhost:3001). When set, every call
+ * that would go to the selected company's `apiUrl` goes here instead; the company
+ * list still comes from the panel. Only honored by the dev server (`npm run dev`),
+ * so no build can ever point real users at localhost.
+ */
+export const COMPANY_API_URL_OVERRIDE = import.meta.env.DEV ? import.meta.env.VITE_COMPANY_API_URL || '' : '';
+
+export const isCompanyAllowed =(code: string, env: AppEnv = APP_ENV) =>
   TEST_COMPANY_CODES.includes(code) === (env === 'test');

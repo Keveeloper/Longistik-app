@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { COMPANY_API_URL_OVERRIDE } from '../config/env';
 import { useAuthStore } from '../store/auth.store';
 import { useCompanyStore } from '../store/company.store';
 
@@ -46,9 +47,10 @@ export const apiErrorMessage = (error: unknown, fallback = 'Ocurrió un error. I
   return typeof message === 'string' && message ? message : fallback;
 };
 
-// Every company has its own backend: use its `apiUrl` as-is, never build it from the code
+// Every company has its own backend: use its `apiUrl` as-is, never build it from the code.
+// In development a local backend can stand in for it (VITE_COMPANY_API_URL, see config/env.ts).
 api.interceptors.request.use((config) => {
-  config.baseURL = useCompanyStore.getState().company?.apiUrl;
+  config.baseURL = COMPANY_API_URL_OVERRIDE || useCompanyStore.getState().company?.apiUrl;
   return config;
 });
 
