@@ -7,22 +7,30 @@ import {
   IonLabel,
   IonPage,
   IonProgressBar,
+  IonRefresher,
+  IonRefresherContent,
   IonRippleEffect,
+  IonSkeletonText,
   useIonActionSheet,
   useIonToast,
+  useIonViewWillEnter,
+  type RefresherEventDetail,
 } from '@ionic/react';
+import { useCallback, useState } from 'react';
+import { apiErrorMessage } from '../../api/client';
 import { icons } from '../../icons';
+import { fullName } from '../../services/auth.service';
+import { homeService, type HomeSummary } from '../../services/home.service';
 import { useAuthStore } from '../../store/auth.store';
+import { useCompanyStore } from '../../store/company.store';
 import './Home.css';
 
-// TODO: replace with data from the backend once the API exists
-const summary = {
-  remesasHoy: 9,
-  manifiestosDespachados: 4,
-  remesasPendientesRndc: 3,
-  rndcReportadas: 149,
-  rndcTotal: 152,
-};
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+/** Placeholder for a figure while the summary loads */
+const Skeleton: React.FC<{ width: string }> = ({ width }) => (
+  <IonSkeletonText animated className="inline-block align-middle" style={{ width, height: '0.8em' }} />
+);
 
 const quickActions = [
   { label: 'Nuevo manifiesto', icon: icons.truck },
@@ -45,10 +53,32 @@ const todayLabel = () =>
 const Home: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const companyName = useCompanyStore((s) => s.company?.name);
   const [presentActionSheet] = useIonActionSheet();
   const [presentToast] = useIonToast();
+  const [summary, setSummary] = useState<HomeSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const firstName = user?.name.split(' ')[0] ?? '';
+  const name = user ? fullName(user) : '';
+
+  const loadSummary = useCallback(async () => {
+    try {
+      setSummary(await homeService.summary());
+      setError(null);
+    } catch (err) {
+      setError(apiErrorMessage(err, 'No se pudo cargar el resumen'));
+    }
+  }, []);
+
+  // Ionic keeps the page mounted, so refresh every time Inicio is shown (and on pull down)
+  useIonViewWillEnter(() => {
+    loadSummary();
+  }, [loadSummary]);
+
+  const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
+    await loadSummary();
+    e.detail.complete();
+  };
 
   // TODO: each action opens its own screen once those designs are built
   const comingSoon = () =>
@@ -56,11 +86,11 @@ const Home: React.FC = () => {
 
   const openAccountMenu = () =>
     presentActionSheet({
-      header: user?.name,
-      subHeader: user?.company,
+      header: name,
+      subHeader: companyName,
       buttons: [
         // Clearing the session is enough: the route guard redirects to /login
-        { text: 'Cerrar sesión', role: 'destructive', icon: icons.logout, handler: logout },
+        { text: 'Cerrar sesión', role: 'destructive', icon: icons.logout, handler: () => logout() },
         { text: 'Cancelar', role: 'cancel' },
       ],
     });
@@ -68,6 +98,10 @@ const Home: React.FC = () => {
   return (
     <IonPage>
       <IonContent fullscreen>
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
         {/* Header */}
         <header className="bg-tinta px-5 pt-[max(54px,calc(var(--ion-safe-area-top)+7px))] pb-[26px]">
           <div className="flex items-center justify-between">
@@ -78,7 +112,7 @@ const Home: React.FC = () => {
               className="flex cursor-pointer border-0 bg-transparent p-0"
             >
               <IonAvatar className="flex h-11 w-11 items-center justify-center bg-white/12 text-[15px] font-semibold text-white">
-                {initials(user?.name ?? '')}
+                {initials(name)}
               </IonAvatar>
             </button>
             <div className="-mr-[2px] flex">
@@ -91,15 +125,30 @@ const Home: React.FC = () => {
               <IonButton fill="clear" className="home-header-button relative" aria-label="Notificaciones" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.bell} />
                 {/* Unread dot */}
-                <span className="absolute top-[12px] right-[1px] h-2 w-2 rounded-full bg-cielo" />
+                {!!summary?.notificacionesSinLeer && (
+                  <span className="absolute top-[12px] right-[1px] h-2 w-2 rounded-full bg-cielo" />
+                )}
               </IonButton>
             </div>
           </div>
-          <h1 className="mt-5 mb-0 text-[22px] leading-[26px] font-semibold text-white">Hola, {firstName}</h1>
-          <p className="mt-1 mb-0 text-[14px] leading-5 text-cielo">{user?.company}</p>
+          <h1 className="mt-5 mb-0 text-[22px] leading-[26px] font-semibold text-white">Hola, {user?.name}</h1>
+          <p className="mt-1 mb-0 text-[14px] leading-5 text-cielo">{companyName}</p>
         </header>
 
         <div className="px-5">
+          {error && (
+            <div role="alert" className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-error-rndc-soft px-4 py-3">
+              <p className="m-0 text-[14px] leading-5 text-error-rndc">{error}</p>
+              <button
+                type="button"
+                onClick={loadSummary}
+                className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-error-rndc"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+
           {/* Operación de hoy */}
           <section className="pt-6">
             <button
@@ -111,9 +160,16 @@ const Home: React.FC = () => {
               <IonIcon icon={icons.chevronRight} className="text-[20px] text-muted" />
               <IonRippleEffect />
             </button>
-            <p className="mt-[10px] mb-0 text-[31px] leading-9 font-semibold tracking-[-1px] text-tinta">{summary.remesasHoy} remesas</p>
+            <p className="mt-[10px] mb-0 text-[31px] leading-9 font-semibold tracking-[-1px] text-tinta">
+              {summary ? plural(summary.remesasHoy, 'remesa', 'remesas') : <Skeleton width="160px" />}
+            </p>
             <p className="mt-1 mb-0 text-[14px] leading-5 text-muted">
-              {summary.manifiestosDespachados} manifiestos despachados · {todayLabel()}
+              {summary ? (
+                plural(summary.manifiestosDespachadosHoy, 'manifiesto despachado', 'manifiestos despachados')
+              ) : (
+                <Skeleton width="150px" />
+              )}{' '}
+              · {todayLabel()}
             </p>
           </section>
 
@@ -139,21 +195,29 @@ const Home: React.FC = () => {
           <IonItem button detail={false} lines="none" className="home-row mt-5" onClick={comingSoon}>
             <IonIcon slot="start" icon={icons.alignJustified} />
             <IonLabel>Mis manifiestos activos</IonLabel>
+            {!!summary?.manifiestosActivos && (
+              <span slot="end" className="home-row-count">
+                {summary.manifiestosActivos}
+              </span>
+            )}
           </IonItem>
 
-          {/* Pending RNDC callout */}
-          <div className="mt-5 rounded-2xl bg-rndc-pendiente-soft px-[18px] pt-4 pb-[14px]">
-            <p className="m-0 text-[15px] leading-5 font-medium text-tinta">
-              Tienes {summary.remesasPendientesRndc} remesas pendientes por enviar al RNDC
-            </p>
-            <button
-              type="button"
-              onClick={comingSoon}
-              className="mt-[5px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
-            >
-              Revisar y enviar
-            </button>
-          </div>
+          {/* Pending RNDC callout: only when there is something to send */}
+          {!!summary?.remesasPendientesRndc && (
+            <div className="mt-5 rounded-2xl bg-rndc-pendiente-soft px-[18px] pt-4 pb-[14px]">
+              <p className="m-0 text-[15px] leading-5 font-medium text-tinta">
+                Tienes {plural(summary.remesasPendientesRndc, 'remesa pendiente', 'remesas pendientes')} por enviar al
+                RNDC
+              </p>
+              <button
+                type="button"
+                onClick={comingSoon}
+                className="mt-[5px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-en-ruta"
+              >
+                Revisar y enviar
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Reporte RNDC */}
@@ -167,12 +231,17 @@ const Home: React.FC = () => {
             <IonIcon icon={icons.chevronRight} className="text-[20px] text-muted" />
             <IonRippleEffect />
           </button>
+          {/* Current month */}
           <p className="mt-2 mb-0 text-[14px] leading-5 text-muted">
-            {summary.rndcReportadas} de {summary.rndcTotal} remesas reportadas
+            {summary ? (
+              `${summary.rndc.reportadas} de ${plural(summary.rndc.total, 'remesa reportada', 'remesas reportadas')}`
+            ) : (
+              <Skeleton width="190px" />
+            )}
           </p>
           <IonProgressBar
             className="home-progress mt-2"
-            value={summary.rndcReportadas / summary.rndcTotal}
+            value={summary?.rndc.total ? summary.rndc.reportadas / summary.rndc.total : 0}
             aria-label="Remesas reportadas al RNDC"
           />
         </section>

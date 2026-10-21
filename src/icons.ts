@@ -5,21 +5,28 @@
  */
 import alertTriangle from '@tabler/icons/outline/alert-triangle.svg';
 import alignJustified from '@tabler/icons/outline/align-justified.svg';
+import arrowsExchange from '@tabler/icons/outline/arrows-exchange.svg';
 import bell from '@tabler/icons/outline/bell.svg';
+import building from '@tabler/icons/outline/building.svg';
 import chevronRight from '@tabler/icons/outline/chevron-right.svg';
 import clipboardCheck from '@tabler/icons/outline/clipboard-check.svg';
 import eye from '@tabler/icons/outline/eye.svg';
 import fileDescription from '@tabler/icons/outline/file-description.svg';
 import helpCircle from '@tabler/icons/outline/help-circle.svg';
 import logout from '@tabler/icons/outline/logout.svg';
+import refresh from '@tabler/icons/outline/refresh.svg';
+import search from '@tabler/icons/outline/search.svg';
 import truck from '@tabler/icons/outline/truck.svg';
+import wifiOff from '@tabler/icons/outline/wifi-off.svg';
 // Custom variants of Tabler icons, matching the designs
 import home from './assets/icons/home-simple.svg';
 
 export const icons = {
   alertTriangle,
   alignJustified,
+  arrowsExchange,
   bell,
+  building,
   chevronRight,
   clipboardCheck,
   eye,
@@ -27,5 +34,8 @@ export const icons = {
   helpCircle,
   home,
   logout,
+  refresh,
+  search,
   truck,
+  wifiOff,
 };

@@ -1,0 +1,22 @@
+{
+  "companies": [
+    {
+      "code": "servicargas360",
+      "name": "Servicargas 360 S.A.S.",
+      "apiUrl": "https://api.servicargas360.longistik.com",
+      "webUrl": "https://servicargas360.longistik.com"
+    },
+    {
+      "code": "transvalle",
+      "name": "Transportes del Valle S.A.S.",
+      "apiUrl": "https://api.transvalle.longistik.com",
+      "webUrl": "https://transvalle.longistik.com"
+    },
+    {
+      "code": "cargandina",
+      "name": "Carga Andina Logística S.A.S.",
+      "apiUrl": "https://api.cargandina.longistik.com",
+      "webUrl": "https://cargandina.longistik.com"
+    }
+  ]
+}

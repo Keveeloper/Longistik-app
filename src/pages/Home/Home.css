@@ -35,6 +35,14 @@
   color: var(--ion-color-dark);
 }
 
+/* Count of active manifiestos at the end of the row */
+.home-row-count {
+  margin-inline-start: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ion-color-medium);
+}
+
 /* Reporte RNDC progress: thin rounded bar */
 .home-progress {
   --background: var(--app-divider-color);

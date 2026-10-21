@@ -1,44 +1,56 @@
 import axios from 'axios';
-import { api } from '../api/client';
+import { api, apiErrorMessage } from '../api/client';
 
+/** `GET /mobile/me` and the `user` of the login response. */
 export interface User {
-  id: string;
+  id: number;
+  /** First word of the stored name */
   name: string;
+  /** Rest of the stored name (may be empty) */
+  lastName: string;
   email: string;
-  /** Transport company the user operates for */
-  company: string;
+  /** Role name in the web app; null when the user has none */
+  role: string | null;
+  status?: boolean;
 }
 
 export interface LoginResponse {
-  token: string;
+  accessToken: string;
+  /** Seconds (30 days) */
+  expiresIn: number;
   user: User;
 }
 
-/** No backend configured yet -> use the mock. */
-const USE_MOCK = !import.meta.env.VITE_API_URL;
-
-const mockLogin = async (username: string, password: string): Promise<LoginResponse> => {
-  await new Promise((resolve) => setTimeout(resolve, 800)); // simulate network latency
-  // Any credentials log in as the demo user, except the password "error" to try the failure path
-  if (password === 'error') throw new Error('Usuario o contraseña incorrectos');
-  return {
-    token: `mock-token-${Date.now()}`,
-    user: { id: '1', name: 'Andrés Rojas', email: username, company: 'Transportes del Valle S.A.S.' },
-  };
-};
+export const fullName = (user: Pick<User, 'name' | 'lastName'>) => `${user.name} ${user.lastName ?? ''}`.trim();
 
 export const authService = {
-  /** `username` accepts either an email or a username. */
-  async login(username: string, password: string): Promise<LoginResponse> {
-    if (USE_MOCK) return mockLogin(username, password);
+  /** Logs in against the selected company's backend. */
+  async login(email: string, password: string): Promise<LoginResponse> {
     try {
-      const { data } = await api.post<LoginResponse>('/auth/login', { username, password });
+      const { data } = await api.post<LoginResponse>('/mobile/auth/login', { email, password });
       return data;
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        throw new Error('Usuario o contraseña incorrectos');
-      }
-      throw new Error('No se pudo conectar con el servidor');
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      // 401 wrong credentials / 403 inactive user: the backend's message is meant for the user
+      if (status === 401) throw new Error(apiErrorMessage(error, 'Correo o contraseña incorrectos'));
+      if (status === 403) throw new Error(apiErrorMessage(error, 'Tu usuario está inactivo. Contacta al administrador.'));
+      if (status === 404) throw new Error('Tu empresa aún no tiene habilitada la app móvil');
+      throw new Error(apiErrorMessage(error, 'No se pudo iniciar sesión. Intenta de nuevo.'));
     }
+  },
+
+  /** Always succeeds for any email (the backend doesn't reveal which ones exist). */
+  async forgotPassword(email: string): Promise<void> {
+    try {
+      await api.post('/public/authentication/forgot-password', { email });
+    } catch (error) {
+      throw new Error(apiErrorMessage(error, 'No se pudo enviar el correo de recuperación'));
+    }
+  },
+
+  /** Current user. 401/403 end the session (handled by the `api` client). */
+  async me(): Promise<User> {
+    const { data } = await api.get<User>('/mobile/me');
+    return data;
   },
 };

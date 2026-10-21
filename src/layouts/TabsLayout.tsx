@@ -1,4 +1,4 @@
-import { Navigate, Route } from 'react-router-dom';
+import { Route } from 'react-router-dom';
 import { IonIcon, IonLabel, IonRouterOutlet, IonTabBar, IonTabButton, IonTabs } from '@ionic/react';
 import ComingSoon from '../components/ComingSoon';
 import { icons } from '../icons';
@@ -20,7 +20,7 @@ const TabsLayout: React.FC = () => (
       <Route path="/manifiestos" element={<ComingSoon title="Manifiestos" />} />
       <Route path="/remesas" element={<ComingSoon title="Remesas" />} />
       <Route path="/novedades" element={<ComingSoon title="Novedades" />} />
-      <Route path="/" element={<Navigate to="/inicio" replace />} />
+      {/* "/" is redirected by the guard in App.tsx */}
     </IonRouterOutlet>
     <IonTabBar slot="bottom" className="app-tab-bar">
       {tabs.map(({ tab, label, icon }) => (
