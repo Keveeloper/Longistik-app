@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isCompanyAllowed } from '../config/env';
 
 /** Company as returned by the panel's public directory. */
 export interface Company {
@@ -38,7 +39,8 @@ let cache: { at: number; companies: Company[] } | null = null;
 const fetchAll = async (): Promise<Company[]> => {
   try {
     const { data } = await panel.get<{ companies: Company[] }>('/api/public/companies');
-    return data.companies ?? [];
+    // Test builds only list the test companies; production hides them
+    return (data.companies ?? []).filter((c) => isCompanyAllowed(c.code));
   } catch (error) {
     const message = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
     throw new Error(message || 'No se pudo cargar la lista de empresas');
@@ -46,7 +48,11 @@ const fetchAll = async (): Promise<Company[]> => {
 };
 
 export const companiesService = {
-  /** Active companies only (the panel hides suspended ones). `force` skips the 5-minute cache. */
+  /**
+   * Active companies of this environment (the panel hides suspended ones; see
+   * config/env.ts for test vs production). `force` skips the 5-minute cache.
+   * A saved company missing from this list is dropped by useCompanyRefresh.
+   */
   async list({ force = false } = {}): Promise<Company[]> {
     if (!force && cache && Date.now() - cache.at < CACHE_MS) return cache.companies;
     const companies = await fetchAll();

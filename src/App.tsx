@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Route, useLocation, useNavigate } from 'react-router-dom';
 import { IonApp, IonRouterOutlet, IonSpinner, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
+import EnvBadge from './components/EnvBadge';
 import { useCompanyRefresh } from './hooks/useCompanyRefresh';
 import { useSessionRefresh } from './hooks/useSessionRefresh';
 import TabsLayout from './layouts/TabsLayout';
@@ -91,6 +92,7 @@ const App: React.FC = () => {
       <IonReactRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AppRoutes />
       </IonReactRouter>
+      <EnvBadge />
     </IonApp>
   );
 };

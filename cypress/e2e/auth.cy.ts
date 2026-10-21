@@ -50,7 +50,7 @@ describe('Company + auth flow', () => {
   const quickActionLabels = () =>
     cy.get('nav[aria-label="Acciones rápidas"] button').then(($b) => [...$b].map((b) => b.innerText.replace(/\s+/g, ' ')));
 
-  const selectCompany = (name = 'Servicargas 360 S.A.S.') => cy.contains('ion-item', name).click();
+  const selectCompany = (name = 'STAGING') => cy.contains('ion-item', name).click();
 
   const login = (password = 'secret') => {
     cy.get('input[autocomplete="username"]').type('ana@longistik.com');
@@ -84,15 +84,16 @@ describe('Company + auth flow', () => {
     expectSelectorVisible();
   });
 
-  it('searches companies ignoring case and accents', () => {
+  // `npm run dev` is the test environment (src/config/env.ts); matching rules are unit-tested
+  it('lists only the test company in the test environment', () => {
     cy.visit('/empresa');
-    cy.get('ion-item.company-row').should('have.length', 3);
-    cy.get('input[type="search"]').type('LOGISTICA');
-    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'Carga Andina Logística');
-    cy.get('input[type="search"]').clear().type('transvalle');
-    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'Transportes del Valle');
-    cy.get('input[type="search"]').clear().type('zzz');
+    // The badge is fixed with pointer-events: none, which Cypress's visibility check reads as covered
+    cy.contains('div', /^Test$/).should('exist');
+    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'STAGING');
+    cy.get('input[type="search"]').type('servicargas');
     cy.contains('No encontramos empresas').should('be.visible');
+    cy.get('input[type="search"]').clear().type('final');
+    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'STAGING');
   });
 
   it('remembers the company and lets the user change it from the login', () => {
@@ -101,20 +102,20 @@ describe('Company + auth flow', () => {
     selectCompany();
     expectStableAt('/login');
     expectLoginVisible();
-    cy.contains('Servicargas 360 S.A.S.').should('be.visible');
+    cy.contains('STAGING').should('be.visible');
 
     // The choice is persisted: reload stays on the login
     cy.reload();
     expectStableAt('/login');
-    cy.contains('Servicargas 360 S.A.S.').should('be.visible');
+    cy.contains('STAGING').should('be.visible');
 
     cy.get('button[aria-label="Cambiar de empresa"]').click();
     expectStableAt('/empresa');
     expectSelectorVisible();
 
-    selectCompany('Transportes del Valle S.A.S.');
+    selectCompany('STAGING');
     expectStableAt('/login');
-    cy.contains('Transportes del Valle S.A.S.').should('be.visible');
+    cy.contains('STAGING').should('be.visible');
   });
 
   it('shows an error with invalid credentials', () => {
@@ -127,14 +128,14 @@ describe('Company + auth flow', () => {
 
   it('logs in against the selected company backend', () => {
     cy.visit('/');
-    selectCompany('Transportes del Valle S.A.S.');
+    selectCompany('STAGING');
     login();
     cy.wait('@login').then(({ request }) => {
-      expect(request.url).to.eq('https://api.transvalle.longistik.com/mobile/auth/login');
+      expect(request.url).to.eq('https://api.finaltest.longistik.com/mobile/auth/login');
       expect(request.body).to.deep.eq({ email: 'ana@longistik.com', password: 'secret' });
     });
     expectStableAt('/inicio');
-    cy.contains('header', 'Transportes del Valle S.A.S.').should('be.visible');
+    cy.contains('header', 'STAGING').should('be.visible');
   });
 
   it('shows the home summary from the API', () => {
@@ -247,7 +248,7 @@ describe('Company + auth flow', () => {
     login();
     expectStableAt('/inicio');
     expectAppVisible();
-    cy.contains('header', 'Servicargas 360 S.A.S.').should('be.visible');
+    cy.contains('header', 'STAGING').should('be.visible');
 
     // Switching tabs must not be hijacked by a stale redirect
     cy.get('ion-tab-button[tab="remesas"]').click();
@@ -276,7 +277,7 @@ describe('Company + auth flow', () => {
     expectStableAt('/login');
     expectLoginVisible();
     // Scoped to the login: the hidden Inicio page also shows the company name
-    cy.get('button[aria-label="Cambiar de empresa"]').parent().should('contain', 'Servicargas 360 S.A.S.');
+    cy.get('button[aria-label="Cambiar de empresa"]').parent().should('contain', 'STAGING');
 
     login();
     expectStableAt('/inicio');
