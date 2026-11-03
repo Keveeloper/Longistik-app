@@ -1,7 +1,6 @@
 /*
- * Manifiestos, remesas and RNDC (P2 of request/mobile-api.md).
- * Not used by any screen yet: the Manifiestos/Remesas tabs and "Revisar y enviar"
- * are built from their designs on top of these calls.
+ * Manifiestos, remesas and RNDC (P2 of request/mobile-api.md), plus the manifiesto PDF (P6).
+ * "Revisar y enviar" and the RNDC report are not used by any screen yet.
  */
 import { api, type Page, type PageParams } from '../api/client';
 
@@ -22,8 +21,8 @@ export interface Manifiesto {
   fechaExpedicion: string;
   estado: EstadoManifiesto;
   estadoRndc: EstadoRndc;
-  vehiculoId: number;
-  placa: string;
+  vehiculoId: number | null;
+  placa: string | null;
   /** Driver saved on the manifiesto when it was issued (older ones: the vehicle's current driver) */
   conductor: { id: number; nombre: string } | null;
   origen: Municipio | null;
@@ -46,7 +45,7 @@ export interface Remesa {
   origen: Municipio | null;
   destino: Municipio | null;
   /** First product, or "X y N más" */
-  producto: string;
+  producto: string | null;
   cantidad: number;
   pesoKg: number;
 }
@@ -59,21 +58,37 @@ export interface ManifiestoDetalle extends Omit<Manifiesto, 'remesas'> {
 }
 
 export interface Tercero {
-  documento: string;
+  documento: string | null;
   nombre: string;
-  direccion: string;
-  telefono: string;
-  municipio: string;
+  direccion: string | null;
+  telefono: string | null;
+  municipio: Municipio | null;
 }
 
 export interface RemesaDetalle extends Remesa {
   rndcError: string | null;
-  remitente: Tercero;
-  destinatario: Tercero;
+  remitente: Tercero | null;
+  destinatario: Tercero | null;
   observaciones: string;
   detalles: { producto: string; cantidad: number; pesoKg: number; valorDeclarado: number }[];
   /** `estadoRndc` is null until the cumplido is sent */
   cumplido: { estadoRndc: EstadoRndc | null; rndcError: string | null };
+}
+
+/** `GET /mobile/manifiestos/{id}/pdf`: the web's PDF (with the RNDC QR) in base64. */
+export interface ManifiestoPdf {
+  manifiestoId: number;
+  numero: string;
+  generadoEn: string;
+  estado: EstadoManifiesto;
+  estadoRndc: EstadoRndc;
+  qrCompleto: boolean;
+  /** Fit to show on the road: accepted by the RNDC, with its QR, not voided */
+  valido: boolean;
+  motivoNoValido: string | null;
+  /** File name, e.g. MT000812.pdf */
+  archivo: string;
+  pdfBase64: string;
 }
 
 export interface RndcResultado {
@@ -109,11 +124,23 @@ export const operationsService = {
     return data;
   },
 
-  /** `q`: number, RNDC consecutive, or client name/document. */
+  /** Generated on every call (takes a few seconds); 404 if the user can't see the manifiesto. */
+  async manifiestoPdf(id: number) {
+    const { data } = await api.get<ManifiestoPdf>(`/mobile/manifiestos/${id}/pdf`, { timeout: 60000 });
+    return data;
+  },
+
+  /** `q`: number, RNDC consecutive, or client name/document. Several `estado`s match any of them. */
   async remesas(
-    params: PageParams & { estado?: EstadoRemesa; estadoRndc?: EstadoRndc; manifiestoId?: number; q?: string } = {}
+    params: PageParams & {
+      estado?: EstadoRemesa | EstadoRemesa[];
+      estadoRndc?: EstadoRndc;
+      manifiestoId?: number;
+      q?: string;
+    } = {}
   ) {
-    const { data } = await api.get<Page<Remesa>>('/mobile/remesas', { params });
+    const estado = Array.isArray(params.estado) ? params.estado.join(',') : params.estado;
+    const { data } = await api.get<Page<Remesa>>('/mobile/remesas', { params: { ...params, estado } });
     return data;
   },
 

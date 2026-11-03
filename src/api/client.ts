@@ -28,7 +28,11 @@ export type ApiErrorCode =
   | 'FORBIDDEN'
   | 'BAD_REQUEST'
   | 'NOT_FOUND'
-  | 'CONFLICT';
+  | 'CONFLICT'
+  | 'SALDO_NEGATIVO'
+  | 'SOBREANTICIPO_TOPE'
+  | 'UNPROCESSABLE'
+  | 'CONSENTIMIENTO_REQUERIDO';
 
 /** Codes that mean the session is over (the others, like FORBIDDEN, keep the user signed in). */
 const SESSION_ENDING_CODES: ApiErrorCode[] = ['TOKEN_INVALID', 'USER_INACTIVE', 'APP_ACCESS_DENIED'];
@@ -45,6 +49,14 @@ export const apiErrorMessage = (error: unknown, fallback = 'Ocurrió un error. I
   if (!error.response) return 'No se pudo conectar con el servidor';
   const message = (error.response.data as { message?: unknown } | undefined)?.message;
   return typeof message === 'string' && message ? message : fallback;
+};
+
+/** Per-field messages of a 400 BAD_REQUEST (`errors`: { field: message }), or {}. */
+export const apiErrorFields = (error: unknown): Record<string, string> => {
+  if (!axios.isAxiosError(error)) return {};
+  const errors = (error.response?.data as { errors?: unknown } | undefined)?.errors;
+  if (!errors || typeof errors !== 'object') return {};
+  return Object.fromEntries(Object.entries(errors).filter(([, v]) => typeof v === 'string')) as Record<string, string>;
 };
 
 // Every company has its own backend: use its `apiUrl` as-is, never build it from the code.

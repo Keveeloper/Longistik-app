@@ -28,6 +28,7 @@ App móvil ──► Panel          GET /api/public/companies          ✅ listo
 | P3 | Reportar novedad (con fotos) | No existe | Propuesta |
 | P3 | Catálogos para formularios | No existe | Propuesta |
 | P4 | Notificaciones y push | No existe | Propuesta |
+| P5 | Sobreanticipos: solicitar, ver, cancelar (`request/app-movil-sobreanticipos.md`) | ✅ Listo en el backend (`docs/mobile-api.md` §P5) | Firme |
 
 ---
 
@@ -328,6 +329,8 @@ Todos los catálogos aceptan `?q=` para buscar y devuelven `[{ "id", "nombre", .
 ---
 
 ## P4 · Notificaciones — Propuesta
+
+> **Reemplazada por [notificaciones-push.md](notificaciones-push.md)** (02/11/2026): arquitectura con el panel como emisor de push, catálogo de avisos, app y web. Lo de abajo queda como referencia.
 
 - `GET /mobile/notificaciones?page=`: lista con `{ id, titulo, mensaje, fecha, leida, link }`. `link` es opcional y lleva a una pantalla, p. ej. `{ "tipo": "remesa", "id": 4502 }`.
 - `POST /mobile/notificaciones/{id}/leida` y `POST /mobile/notificaciones/leidas` (marcar todas).

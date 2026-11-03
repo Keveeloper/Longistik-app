@@ -45,6 +45,10 @@ describe('Company + auth flow', () => {
     cy.intercept('GET', '**/api/public/companies*', { fixture: 'companies.json' }).as('companies');
     stubUser(despachador);
     cy.intercept('GET', '**/mobile/home/summary', { fixture: 'home-summary.json' }).as('summary');
+    // The Manifiestos/Remesas tabs and the drivers' offline PDFs load lists (cumplido.cy.ts covers them)
+    const empty = { items: [], page: 1, pageSize: 20, total: 0 };
+    cy.intercept('GET', '**/mobile/manifiestos?*', { body: empty });
+    cy.intercept('GET', '**/mobile/remesas?*', { body: empty });
   });
 
   const quickActionLabels = () =>
@@ -253,12 +257,12 @@ describe('Company + auth flow', () => {
     // Switching tabs must not be hijacked by a stale redirect
     cy.get('ion-tab-button[tab="remesas"]').click();
     expectStableAt('/remesas');
-    cy.contains('ion-content', 'Remesas: pantalla en construcción').should('be.visible');
+    cy.contains('ion-content', 'No tienes remesas por entregar').should('be.visible');
 
     // Session persisted: reload stays inside the app
     cy.reload();
     expectStableAt('/remesas');
-    cy.contains('ion-content', 'Remesas: pantalla en construcción').should('be.visible');
+    cy.contains('ion-content', 'No tienes remesas por entregar').should('be.visible');
 
     // Logged-in users can't go back to the entry screens
     cy.visit('/login');

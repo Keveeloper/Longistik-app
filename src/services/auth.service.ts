@@ -11,6 +11,7 @@ export type Permiso =
   | 'remesas.cumplir'
   | 'novedades.reportar'
   | 'rndc.enviar'
+  | 'sobreanticipos.solicitar'
   | 'vehiculos.asignar';
 
 /**
