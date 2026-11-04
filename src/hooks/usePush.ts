@@ -26,7 +26,8 @@ export const usePush = () => {
   useEffect(() => {
     if (!signedIn || !pushDisponible()) return;
     permisoPush().then((p) => {
-      if (p === 'granted') registrarDispositivo().catch(() => undefined);
+      console.info('[push] permiso:', p);
+      if (p === 'granted') registrarDispositivo().catch((err) => console.warn('[push] no se registró el teléfono', err));
     });
   }, [signedIn, userId]);
 

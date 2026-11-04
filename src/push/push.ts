@@ -39,7 +39,8 @@ export const permisoPush = async (): Promise<PermisoPush> => {
   try {
     const { receive } = await (await firebase()).checkPermissions();
     return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
-  } catch {
+  } catch (err) {
+    console.warn('[push] Firebase no responde', err);
     return 'no_disponible';
   }
 };
@@ -65,6 +66,7 @@ export const registrarDispositivo = async (token?: string) => {
     descripcion: await descripcionDispositivo(),
   });
   await Preferences.set({ key: TOKEN_KEY, value: fcm });
+  console.info('[push] teléfono registrado');
 };
 
 /**
