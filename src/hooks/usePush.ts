@@ -1,4 +1,4 @@
-import { useIonToast } from '@ionic/react';
+import { useIonAlert, useIonToast } from '@ionic/react';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { responderPedido } from '../offline/seguimiento';
@@ -12,15 +12,17 @@ import { useCompanyStore } from '../store/company.store';
 /**
  * Push on the phone, mounted once next to the route guard (request/notificaciones-push.md §7):
  * registers the phone when the permission was already given, shows notifications that arrive
- * with the app open as a toast, and opens the right screen when one is tapped.
+ * with the app open in a modal (Android shows nothing then), and opens the right screen when one
+ * is tapped.
  */
 export const usePush = () => {
   const signedIn = useAuthStore((s) => !!s.token);
   const userId = useAuthStore((s) => s.user?.id);
   const navigate = useNavigate();
   const [presentToast] = useIonToast();
-  const latest = useRef({ navigate, presentToast });
-  latest.current = { navigate, presentToast };
+  const [presentAlert] = useIonAlert();
+  const latest = useRef({ navigate, presentToast, presentAlert });
+  latest.current = { navigate, presentToast, presentAlert };
 
   // Already allowed (from a previous launch): keep the token registered with this session
   useEffect(() => {
@@ -40,6 +42,7 @@ export const usePush = () => {
     let activo = true;
     iniciarPush({
       onRecibida: (titulo, cuerpo, data) => {
+        console.info('[push] recibida con la app abierta:', data.tipo);
         if (!deEstaSesion(data)) return;
         useAvisosStore.getState().refrescar();
         const link = parseLink(data.link);
@@ -56,12 +59,17 @@ export const usePush = () => {
             .catch(() => undefined);
           return;
         }
-        latest.current.presentToast({
-          header: titulo,
+        const abrir = () => {
+          if (data.notificacionId) notificacionesService.marcarLeida(Number(data.notificacionId)).catch(() => undefined);
+          latest.current.navigate(rutaDeAviso(data.tipo, link));
+        };
+        latest.current.presentAlert({
+          header: titulo || 'Nueva notificación',
           message: cuerpo,
-          duration: 5000,
-          position: 'top',
-          buttons: [{ text: 'Ver', handler: () => latest.current.navigate(rutaDeAviso(data.tipo, link)) }],
+          buttons: [
+            { text: 'Cerrar', role: 'cancel' },
+            { text: link ? 'Ver' : 'Ver notificaciones', handler: abrir },
+          ],
         });
       },
       onAbierta: (data) => {

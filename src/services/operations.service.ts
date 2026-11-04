@@ -7,6 +7,8 @@ import { api, type Page, type PageParams } from '../api/client';
 export type EstadoRndc = 'reportado' | 'pendiente' | 'error';
 export type EstadoManifiesto = 'activo' | 'cumplido' | 'inactivo';
 export type EstadoRemesa = 'creada' | 'manifiesto' | 'en_ruta' | 'cumplido' | 'inactivo';
+/** Remesas still to be delivered (the Remesas tab default, also Inicio's "Ver remesas" badge) */
+export const REMESAS_POR_ENTREGAR: EstadoRemesa[] = ['manifiesto', 'en_ruta'];
 
 export interface Municipio {
   codigoDane: string;

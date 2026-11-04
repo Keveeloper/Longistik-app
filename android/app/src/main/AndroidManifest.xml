@@ -38,6 +38,13 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="operacion" />
+        <!-- Status bar icon of the notifications: the logo as a white silhouette, tinted with the brand green -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_longistik" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notificacion" />
     </application>
 
     <!-- Permissions -->

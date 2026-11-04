@@ -197,7 +197,10 @@ describe('Company + auth flow', () => {
     selectCompany();
     login();
     expectAppVisible();
-    quickActionLabels().should('deep.eq', ['Nuevo manifiesto', 'Nueva remesa', 'Reportar novedad', 'Cumplir remesa']);
+    quickActionLabels().should('deep.eq', ['Ver manifiestos', 'Ver remesas', 'Reportar novedad', 'Cumplir remesa']);
+    // The badge counts the active manifiestos; no remesas to deliver, no badge
+    cy.get('button[aria-label="Ver manifiestos: 6 pendientes"]').should('be.visible');
+    cy.contains('nav[aria-label="Acciones rápidas"] button', 'Ver remesas').should('not.have.attr', 'aria-label');
     cy.contains('button', 'Revisar y enviar').should('be.visible');
   });
 
@@ -207,7 +210,7 @@ describe('Company + auth flow', () => {
     selectCompany();
     login();
     expectAppVisible();
-    quickActionLabels().should('deep.eq', ['Reportar novedad', 'Cumplir remesa']);
+    quickActionLabels().should('deep.eq', ['Ver manifiestos', 'Ver remesas', 'Reportar novedad', 'Cumplir remesa']);
     cy.contains('Tienes 3 remesas pendientes').should('be.visible');
     cy.contains('button', 'Revisar y enviar').should('not.exist');
     cy.contains('No tienes vehículos asignados').should('not.exist');

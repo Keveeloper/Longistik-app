@@ -39,6 +39,10 @@ describe('esDeEstaSesion', () => {
     expect(esDeEstaSesion({ empresa: 'otra', userId: '34' }, 'finaltest', 34)).toBe(false);
     expect(esDeEstaSesion({ empresa: 'finaltest', userId: '35' }, 'finaltest', 34)).toBe(false);
   });
+
+  it("shows the panel's test push to anyone", () => {
+    expect(esDeEstaSesion({ tipo: 'prueba', empresa: 'panel' }, 'finaltest', 34)).toBe(true);
+  });
 });
 
 describe('debeReportarOportunista', () => {

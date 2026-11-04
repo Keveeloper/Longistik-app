@@ -22,7 +22,7 @@ import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
 import { usePagedList } from '../../hooks/usePagedList';
 import { icons } from '../../icons';
 import { colaDeSesion } from '../../offline/cumplidos';
-import { operationsService, type EstadoRemesa, type Remesa } from '../../services/operations.service';
+import { operationsService, REMESAS_POR_ENTREGAR, type EstadoRemesa, type Remesa } from '../../services/operations.service';
 import { useCumplidosQueue } from '../../store/cumplidosQueue.store';
 import { ciudad, formatFecha, formatKg, plural } from '../../utils/format';
 import { ListSkeleton } from '../Manifiestos/Manifiestos';
@@ -30,7 +30,7 @@ import { ListSkeleton } from '../Manifiestos/Manifiestos';
 type Filtro = 'por_entregar' | 'cumplido' | 'todas';
 
 const filtros: { value: Filtro; label: string; estado?: EstadoRemesa[] }[] = [
-  { value: 'por_entregar', label: 'Por entregar', estado: ['manifiesto', 'en_ruta'] },
+  { value: 'por_entregar', label: 'Por entregar', estado: REMESAS_POR_ENTREGAR },
   { value: 'cumplido', label: 'Cumplidas', estado: ['cumplido'] },
   { value: 'todas', label: 'Todas' },
 ];

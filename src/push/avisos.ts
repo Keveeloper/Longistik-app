@@ -25,7 +25,9 @@ export const rutaDeAviso = (tipo: string | undefined, link: LinkAviso | null): s
 
 /**
  * A push that arrives after switching user or company on a shared phone belongs to the
- * other session: it isn't opened.
+ * other session: it isn't opened. The panel's "Enviar prueba" (tipo `prueba`, empresa `panel`)
+ * carries no session data and is shown to anyone.
  */
 export const esDeEstaSesion = (data: DataPush, companyCode: string | undefined, userId: number | undefined) =>
-  (!data.empresa || data.empresa === companyCode) && (!data.userId || Number(data.userId) === userId);
+  data.tipo === 'prueba' ||
+  ((!data.empresa || data.empresa === companyCode) && (!data.userId || Number(data.userId) === userId));
