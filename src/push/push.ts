@@ -28,16 +28,21 @@ const CANALES = [
 
 export const pushDisponible = () => Capacitor.isNativePlatform();
 
-let plugin: Promise<FirebaseMessagingPlugin> | null = null;
+/*
+ * A Capacitor plugin is a proxy that answers to any method name, including `then`: resolving a
+ * Promise with it makes JavaScript call the native "FirebaseMessaging.then()", which fails.
+ * So the plugin travels wrapped in an object and is unwrapped by each caller.
+ */
+let plugin: Promise<{ fm: FirebaseMessagingPlugin }> | null = null;
 const firebase = () => {
-  plugin ??= import('@capacitor-firebase/messaging').then((m) => m.FirebaseMessaging);
+  plugin ??= import('@capacitor-firebase/messaging').then((m) => ({ fm: m.FirebaseMessaging }));
   return plugin;
 };
 
 export const permisoPush = async (): Promise<PermisoPush> => {
   if (!pushDisponible()) return 'no_disponible';
   try {
-    const { receive } = await (await firebase()).checkPermissions();
+    const { receive } = await (await firebase()).fm.checkPermissions();
     return receive === 'granted' ? 'granted' : receive === 'denied' ? 'denied' : 'prompt';
   } catch (err) {
     console.warn('[push] Firebase no responde', err);
@@ -48,7 +53,7 @@ export const permisoPush = async (): Promise<PermisoPush> => {
 /** Shows the system prompt (from the "Activar" button, never on launch) and registers the phone. */
 export const activarPush = async (): Promise<PermisoPush> => {
   if (!pushDisponible()) return 'no_disponible';
-  const { receive } = await (await firebase()).requestPermissions();
+  const { receive } = await (await firebase()).fm.requestPermissions();
   if (receive !== 'granted') return receive === 'denied' ? 'denied' : 'prompt';
   await registrarDispositivo();
   return 'granted';
@@ -57,7 +62,7 @@ export const activarPush = async (): Promise<PermisoPush> => {
 /** Registers this phone's token with the company backend (idempotent). */
 export const registrarDispositivo = async (token?: string) => {
   if (!pushDisponible() || !useAuthStore.getState().token) return;
-  const fcm = token ?? (await (await firebase()).getToken()).token;
+  const fcm = token ?? (await (await firebase()).fm.getToken()).token;
   if (!fcm) return;
   await notificacionesService.registrarDispositivo({
     token: fcm,
@@ -79,7 +84,7 @@ export const desregistrarDispositivo = async () => {
   const { value } = await Preferences.get({ key: TOKEN_KEY });
   await Preferences.remove({ key: TOKEN_KEY });
   if (!value) return;
-  await Promise.allSettled([notificacionesService.borrarDispositivo(value), firebase().then((f) => f.deleteToken())]);
+  await Promise.allSettled([notificacionesService.borrarDispositivo(value), firebase().then(({ fm }) => fm.deleteToken())]);
 };
 
 export interface ListenersPush {
@@ -92,7 +97,7 @@ export interface ListenersPush {
 /** Channels and listeners; call once per launch. Returns a cleanup function. */
 export const iniciarPush = async ({ onRecibida, onAbierta }: ListenersPush): Promise<() => void> => {
   if (!pushDisponible()) return () => {};
-  const fm = await firebase();
+  const { fm } = await firebase();
   if (Capacitor.getPlatform() === 'android') {
     await Promise.allSettled(CANALES.map((c) => fm.createChannel({ ...c, visibility: 1, vibration: true })));
   }
