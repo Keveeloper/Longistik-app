@@ -30,6 +30,7 @@ import { seguimientoService, type Viaje } from '../../services/seguimiento.servi
 import { useAvisosStore } from '../../store/avisos.store';
 import { fullName, hasPermiso, type Permiso } from '../../services/auth.service';
 import { homeService, type HomeSummary } from '../../services/home.service';
+import { operationsService, REMESAS_POR_ENTREGAR } from '../../services/operations.service';
 import { useAuthStore } from '../../store/auth.store';
 import { useCompanyStore } from '../../store/company.store';
 import './Home.css';
@@ -41,11 +42,12 @@ const Skeleton: React.FC<{ width: string }> = ({ width }) => (
   <IonSkeletonText animated className="inline-block align-middle" style={{ width, height: '0.8em' }} />
 );
 
-// Each action shows only when the user's role grants its permission
-// `href`: screens already built; the others show "Disponible próximamente"
-const quickActions: { label: string; icon: string; permiso: Permiso; href?: string }[] = [
-  { label: 'Nuevo manifiesto', icon: icons.truck, permiso: 'manifiestos.crear' },
-  { label: 'Nueva remesa', icon: icons.fileDescription, permiso: 'remesas.crear' },
+// Each action shows only when the user's role grants its permission; without `permiso`, whenever
+// the user sees manifiestos. `href`: screens already built; the others show "Disponible próximamente".
+// `contador`: the badge with what is pending. The app doesn't create manifiestos or remesas.
+const quickActions: { label: string; icon: string; permiso?: Permiso; href?: string; contador?: 'manifiestos' | 'remesas' }[] = [
+  { label: 'Ver manifiestos', icon: icons.truck, href: '/manifiestos', contador: 'manifiestos' },
+  { label: 'Ver remesas', icon: icons.fileDescription, href: '/remesas', contador: 'remesas' },
   { label: 'Reportar novedad', icon: icons.alertTriangle, permiso: 'novedades.reportar' },
   // The Remesas tab opens on the ones still to be delivered
   { label: 'Cumplir remesa', icon: icons.clipboardCheck, permiso: 'remesas.cumplir', href: '/remesas' },
@@ -73,6 +75,7 @@ const Home: React.FC = () => {
   const [presentToast] = useIonToast();
   const router = useIonRouter();
   const [summary, setSummary] = useState<HomeSummary | null>(null);
+  const [remesasPorEntregar, setRemesasPorEntregar] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [permiso, setPermiso] = useState<PermisoPush>('no_disponible');
   const [tarjetaPush, setTarjetaPush] = useState(false);
@@ -83,9 +86,10 @@ const Home: React.FC = () => {
   const loadViaje = viajeActivo.load;
 
   const name = user ? fullName(user) : '';
-  const actions = quickActions.filter(({ permiso }) => hasPermiso(user, permiso));
   // Nothing to show: the role sees no manifiestos, or only assigned ones and has no vehicle
   const noAccess = user?.alcance === 'ninguno' || (user?.alcance === 'asignados' && !user.vehiculos?.length);
+  const actions = quickActions.filter(({ permiso }) => (permiso ? hasPermiso(user, permiso) : !noAccess));
+  const contadores = { manifiestos: summary?.manifiestosActivos, remesas: remesasPorEntregar ?? undefined };
   const placas = user?.alcance === 'asignados' ? user.vehiculos?.map((v) => v.placa).join(', ') : '';
 
   const loadSummary = useCallback(async () => {
@@ -97,9 +101,19 @@ const Home: React.FC = () => {
     }
   }, []);
 
+  // The summary has no remesas to deliver: the total of the Remesas tab's default list
+  const loadRemesas = useCallback(async () => {
+    try {
+      const { total } = await operationsService.remesas({ estado: REMESAS_POR_ENTREGAR, page: 1, pageSize: 1 });
+      setRemesasPorEntregar(total);
+    } catch {
+      // Without signal the badge keeps its last value
+    }
+  }, []);
+
   const loadAll = useCallback(
-    () => Promise.all([loadSummary(), esConductor ? loadViaje() : null]),
-    [loadSummary, loadViaje, esConductor]
+    () => Promise.all([loadSummary(), noAccess ? null : loadRemesas(), esConductor ? loadViaje() : null]),
+    [loadSummary, loadRemesas, loadViaje, esConductor, noAccess]
   );
 
   const revisarPermiso = useCallback(async () => {
@@ -284,20 +298,31 @@ const Home: React.FC = () => {
           {/* Quick actions. The gap matches the design's spacing of four 76px buttons, so fewer stay left-aligned */}
           {actions.length > 0 && (
             <nav className="mt-[22px] flex gap-x-[calc((100%-304px)/3)]" aria-label="Acciones rápidas">
-              {actions.map(({ label, icon, href }) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => (href ? router.push(href) : comingSoon())}
-                  className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
-                >
-                  <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
-                    <IonIcon icon={icon} className="text-[26px] text-tinta" />
-                    <IonRippleEffect />
-                  </span>
-                  <span className="mt-2 text-[13px] leading-[17px] text-tinta">{label}</span>
-                </button>
-              ))}
+              {actions.map(({ label, icon, href, contador }) => {
+                const pendientes = contador ? contadores[contador] : undefined;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => (href ? router.push(href) : comingSoon())}
+                    aria-label={pendientes ? `${label}: ${pendientes} pendientes` : undefined}
+                    className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
+                  >
+                    <span className="relative">
+                      <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
+                        <IonIcon icon={icon} className="text-[26px] text-tinta" />
+                        <IonRippleEffect />
+                      </span>
+                      {!!pendientes && (
+                        <span className="absolute -top-1 -right-1 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-verde px-1 text-[12px] leading-none font-semibold text-white">
+                          {pendientes > 99 ? '99+' : pendientes}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-2 text-[13px] leading-[17px] text-tinta">{label}</span>
+                  </button>
+                );
+              })}
             </nav>
           )}
 
