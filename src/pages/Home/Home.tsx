@@ -12,14 +12,22 @@ import {
   IonRippleEffect,
   IonSkeletonText,
   useIonActionSheet,
+  useIonRouter,
   useIonToast,
   useIonViewWillEnter,
   type RefresherEventDetail,
 } from '@ionic/react';
-import { useCallback, useState } from 'react';
+import { Preferences } from '@capacitor/preferences';
+import { useCallback, useEffect, useState } from 'react';
 import { apiErrorMessage } from '../../api/client';
+import ViajeEnCurso from '../../components/ViajeEnCurso';
 import { icons } from '../../icons';
 import { useAppResume } from '../../hooks/useAppResume';
+import { useCachedQuery } from '../../hooks/useCachedQuery';
+import { VIAJE_ACTIVO_KEY } from '../../offline/seguimiento';
+import { activarPush, cerrarSesion, permisoPush, type PermisoPush } from '../../push/push';
+import { seguimientoService, type Viaje } from '../../services/seguimiento.service';
+import { useAvisosStore } from '../../store/avisos.store';
 import { fullName, hasPermiso, type Permiso } from '../../services/auth.service';
 import { homeService, type HomeSummary } from '../../services/home.service';
 import { useAuthStore } from '../../store/auth.store';
@@ -34,11 +42,13 @@ const Skeleton: React.FC<{ width: string }> = ({ width }) => (
 );
 
 // Each action shows only when the user's role grants its permission
-const quickActions: { label: string; icon: string; permiso: Permiso }[] = [
+// `href`: screens already built; the others show "Disponible próximamente"
+const quickActions: { label: string; icon: string; permiso: Permiso; href?: string }[] = [
   { label: 'Nuevo manifiesto', icon: icons.truck, permiso: 'manifiestos.crear' },
   { label: 'Nueva remesa', icon: icons.fileDescription, permiso: 'remesas.crear' },
   { label: 'Reportar novedad', icon: icons.alertTriangle, permiso: 'novedades.reportar' },
-  { label: 'Cumplir remesa', icon: icons.clipboardCheck, permiso: 'remesas.cumplir' },
+  // The Remesas tab opens on the ones still to be delivered
+  { label: 'Cumplir remesa', icon: icons.clipboardCheck, permiso: 'remesas.cumplir', href: '/remesas' },
 ];
 
 const initials = (name: string) =>
@@ -49,17 +59,28 @@ const initials = (name: string) =>
     .map((part) => part[0].toUpperCase())
     .join('');
 
+/** "Ahora no" on the notifications card hides it for this long. */
+const AVISO_PUSH_PAUSA_MS = 30 * 24 * 60 * 60 * 1000;
+const AVISO_PUSH_KEY = 'push-tarjeta-oculta-hasta';
+
 const todayLabel = () =>
   new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long' }).format(new Date());
 
 const Home: React.FC = () => {
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
   const companyName = useCompanyStore((s) => s.company?.name);
   const [presentActionSheet] = useIonActionSheet();
   const [presentToast] = useIonToast();
+  const router = useIonRouter();
   const [summary, setSummary] = useState<HomeSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [permiso, setPermiso] = useState<PermisoPush>('no_disponible');
+  const [tarjetaPush, setTarjetaPush] = useState(false);
+  const avisos = useAvisosStore((s) => s.version);
+  // Drivers: the trip with tracking, if any (also kept on the phone to answer without signal)
+  const esConductor = user?.alcance === 'asignados';
+  const viajeActivo = useCachedQuery<Viaje | null>(VIAJE_ACTIVO_KEY, () => seguimientoService.activo());
+  const loadViaje = viajeActivo.load;
 
   const name = user ? fullName(user) : '';
   const actions = quickActions.filter(({ permiso }) => hasPermiso(user, permiso));
@@ -76,17 +97,54 @@ const Home: React.FC = () => {
     }
   }, []);
 
+  const loadAll = useCallback(
+    () => Promise.all([loadSummary(), esConductor ? loadViaje() : null]),
+    [loadSummary, loadViaje, esConductor]
+  );
+
+  const revisarPermiso = useCallback(async () => {
+    const p = await permisoPush();
+    setPermiso(p);
+    const { value } = await Preferences.get({ key: AVISO_PUSH_KEY });
+    setTarjetaPush(p === 'prompt' && (!value || Number(value) < Date.now()));
+  }, []);
+
   // Ionic keeps the page mounted, so refresh every time Inicio is shown (and on pull down)
   useIonViewWillEnter(() => {
-    loadSummary();
-  }, [loadSummary]);
+    loadAll();
+    revisarPermiso();
+  }, [loadAll, revisarPermiso]);
   // Figures depend on the assigned vehicles, which may change while the app is in the background
-  useAppResume(loadSummary);
+  useAppResume(loadAll);
+  // A notification arrived with the app open: the bell's dot and the trip may have changed
+  useEffect(() => {
+    if (avisos) loadAll();
+  }, [avisos, loadAll]);
 
   const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
-    await loadSummary();
+    await loadAll();
     e.detail.complete();
   };
+
+  const activarNotificaciones = async () => {
+    try {
+      const p = await activarPush();
+      setPermiso(p);
+      setTarjetaPush(false);
+      if (p === 'denied') {
+        presentToast({ message: 'Puedes activarlas después en los ajustes del teléfono.', duration: 3000, position: 'bottom' });
+      }
+    } catch (err) {
+      presentToast({ message: apiErrorMessage(err, 'No se pudieron activar las notificaciones'), duration: 3000, position: 'bottom' });
+    }
+  };
+
+  const ocultarTarjetaPush = () => {
+    setTarjetaPush(false);
+    Preferences.set({ key: AVISO_PUSH_KEY, value: String(Date.now() + AVISO_PUSH_PAUSA_MS) });
+  };
+
+  const viaje = esConductor ? viajeActivo.data : null;
 
   // TODO: each action opens its own screen once those designs are built
   const comingSoon = () =>
@@ -95,10 +153,13 @@ const Home: React.FC = () => {
   const openAccountMenu = () =>
     presentActionSheet({
       header: name,
-      subHeader: [companyName, placas].filter(Boolean).join(' · '),
+      subHeader: [companyName, placas, permiso === 'denied' ? 'Notificaciones desactivadas en el teléfono' : '']
+        .filter(Boolean)
+        .join(' · '),
       buttons: [
-        // Clearing the session is enough: the route guard redirects to /login
-        { text: 'Cerrar sesión', role: 'destructive', icon: icons.logout, handler: () => logout() },
+        // Clearing the session is enough: the route guard redirects to /login. The phone stops
+        // getting this user's notifications first.
+        { text: 'Cerrar sesión', role: 'destructive', icon: icons.logout, handler: () => void cerrarSesion() },
         { text: 'Cancelar', role: 'cancel' },
       ],
     });
@@ -130,7 +191,7 @@ const Home: React.FC = () => {
               <IonButton fill="clear" className="home-header-button" aria-label="Ayuda" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.helpCircle} />
               </IonButton>
-              <IonButton fill="clear" className="home-header-button relative" aria-label="Notificaciones" onClick={comingSoon}>
+              <IonButton fill="clear" className="home-header-button relative" aria-label="Notificaciones" onClick={() => router.push('/notificaciones')}>
                 <IonIcon slot="icon-only" icon={icons.bell} />
                 {/* Unread dot */}
                 {!!summary?.notificacionesSinLeer && (
@@ -154,6 +215,36 @@ const Home: React.FC = () => {
               >
                 Reintentar
               </button>
+            </div>
+          )}
+
+          {viaje && <ViajeEnCurso viaje={viaje} onCambio={loadViaje} />}
+
+          {tarjetaPush && (
+            <div className="mt-4 rounded-2xl bg-superficie px-4 py-3">
+              <div className="flex items-start gap-3">
+                <IonIcon icon={icons.bell} className="mt-[2px] shrink-0 text-[22px] text-tinta" aria-hidden="true" />
+                <p className="m-0 text-[14px] leading-5 text-tinta">
+                  Activa las notificaciones para saber cuándo aprueban tus sobreanticipos, te asignan un viaje o tu empresa necesita tu
+                  ubicación.
+                </p>
+              </div>
+              <div className="mt-2 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={ocultarTarjetaPush}
+                  className="cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-muted"
+                >
+                  Ahora no
+                </button>
+                <button
+                  type="button"
+                  onClick={activarNotificaciones}
+                  className="cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-verde"
+                >
+                  Activar
+                </button>
+              </div>
             </div>
           )}
 
@@ -193,11 +284,11 @@ const Home: React.FC = () => {
           {/* Quick actions. The gap matches the design's spacing of four 76px buttons, so fewer stay left-aligned */}
           {actions.length > 0 && (
             <nav className="mt-[22px] flex gap-x-[calc((100%-304px)/3)]" aria-label="Acciones rápidas">
-              {actions.map(({ label, icon }) => (
+              {actions.map(({ label, icon, href }) => (
                 <button
                   key={label}
                   type="button"
-                  onClick={comingSoon}
+                  onClick={() => (href ? router.push(href) : comingSoon())}
                   className="flex w-[76px] cursor-pointer flex-col items-center border-0 bg-transparent p-0"
                 >
                   <span className="ion-activatable relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-superficie">
@@ -212,7 +303,7 @@ const Home: React.FC = () => {
 
           {/* Mis manifiestos activos */}
           {!noAccess && (
-            <IonItem button detail={false} lines="none" className="home-row mt-5" onClick={comingSoon}>
+            <IonItem button detail={false} lines="none" className="home-row mt-5" onClick={() => router.push('/manifiestos')}>
               <IonIcon slot="start" icon={icons.alignJustified} />
               <IonLabel>Mis manifiestos activos</IonLabel>
               {!!summary?.manifiestosActivos && (
@@ -220,6 +311,14 @@ const Home: React.FC = () => {
                   {summary.manifiestosActivos}
                 </span>
               )}
+            </IonItem>
+          )}
+
+          {/* Requests for more money during a trip (approved and paid on the web) */}
+          {hasPermiso(user, 'sobreanticipos.solicitar') && (
+            <IonItem button detail={false} lines="none" className="home-row mt-3" onClick={() => router.push('/sobreanticipos')}>
+              <IonIcon slot="start" icon={icons.cash} />
+              <IonLabel>Mis sobreanticipos</IonLabel>
             </IonItem>
           )}
 

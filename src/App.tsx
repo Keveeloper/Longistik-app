@@ -4,10 +4,15 @@ import { IonApp, IonRouterOutlet, IonSpinner, setupIonicReact } from '@ionic/rea
 import { IonReactRouter } from '@ionic/react-router';
 import EnvBadge from './components/EnvBadge';
 import { useCompanyRefresh } from './hooks/useCompanyRefresh';
+import { useOfflineSync } from './hooks/useOfflineSync';
+import { usePush } from './hooks/usePush';
 import { useSessionRefresh } from './hooks/useSessionRefresh';
 import TabsLayout from './layouts/TabsLayout';
 import CompanySelect from './pages/CompanySelect/CompanySelect';
 import Login from './pages/Login/Login';
+import ManifiestoDocumento from './pages/Manifiestos/ManifiestoDocumento';
+import CumplirRemesa from './pages/Remesas/CumplirRemesa';
+import CompartirUbicacion from './pages/Seguimiento/CompartirUbicacion';
 import { useAuthStore } from './store/auth.store';
 import { useCompanyStore } from './store/company.store';
 
@@ -46,6 +51,10 @@ const AppRoutes: React.FC = () => {
 
   useCompanyRefresh();
   useSessionRefresh();
+  // Deliveries and locations saved without signal, and the active manifiestos' PDFs
+  useOfflineSync();
+  // Push on the phone: registration, notifications with the app open, and taps
+  usePush();
 
   const stage = !hasCompany ? COMPANY_PATH : !isAuthenticated ? LOGIN_PATH : HOME_PATH;
   // Signed-in users may be anywhere in the app except the entry screens
@@ -64,6 +73,10 @@ const AppRoutes: React.FC = () => {
       <Route path={LOGIN_PATH} element={<Login />} />
       {/* Without this, "/" falls into the tabs layout, whose tab bar stays on top of the entry screens */}
       <Route path="/" element={<Navigate to={stage} replace />} />
+      {/* Full-screen pages, without the tab bar (more specific than "/*", so they win) */}
+      <Route path="/manifiestos/:id/documento" element={<ManifiestoDocumento />} />
+      <Route path="/remesas/:id/cumplir" element={<CumplirRemesa />} />
+      <Route path="/seguimiento/:manifiestoId/compartir" element={<CompartirUbicacion />} />
       <Route path="/*" element={<TabsLayout />} />
     </IonRouterOutlet>
   );

@@ -1,0 +1,30 @@
+/* Ionic internals of the cumplido form (layout lives in Tailwind classes) */
+
+/* Fields inside the rounded bordered blocks */
+.cumplir-item {
+  --background: transparent;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --border-color: var(--app-divider-color);
+  --color: var(--ion-color-dark);
+  /* ion-label/toggle text inherits its size from the item */
+  font-size: 15px;
+}
+
+.cumplir-item ion-input,
+.cumplir-item ion-textarea {
+  --placeholder-color: var(--ion-color-medium);
+  font-size: 16px;
+}
+
+.cumplir-item ion-toggle {
+  --track-background-checked: var(--ion-color-primary);
+}
+
+/* Sticky submit area above the home indicator */
+.cumplir-footer {
+  --background: var(--ion-background-color);
+  --border-width: 1px 0 0;
+  --border-color: var(--app-divider-color);
+  padding-bottom: var(--ion-safe-area-bottom, 0px);
+}
