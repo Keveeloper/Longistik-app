@@ -91,38 +91,52 @@ const Notificaciones: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="px-4 pt-4 pb-6">
-          <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+        <div className="pb-6">
+          {error && (
+            <div className="px-5 pb-3">
+              <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+            </div>
+          )}
           {items === null ? (
             <ListSkeleton />
           ) : items.length === 0 ? (
-            !error && <p className="mt-10 text-center text-body text-muted">No tienes notificaciones</p>
+            !error && (
+              <div className="flex flex-col items-center px-10 pt-[120px] text-center">
+                <span className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-superficie">
+                  <IonIcon icon={icons.bell} className="text-[28px] text-tinta" aria-hidden="true" />
+                </span>
+                <p className="mt-5 mb-0 text-[20px] leading-7 font-semibold text-tinta">Todo al día</p>
+                <p className="mt-2 mb-0 text-[16px] leading-[22px] text-muted">
+                  Aquí verás los avisos de tus manifiestos, remesas y sobreanticipos.
+                </p>
+              </div>
+            )
           ) : (
-            <ul className="m-0 mt-1 list-none p-0">
+            <ul className="m-0 list-none p-0">
               {items.map((n) => {
                 const nueva = !n.leida && !leidas.has(n.id);
                 return (
-                  <li key={n.id} className="border-0 border-b border-solid border-divider last:border-b-0">
+                  <li key={n.id}>
                     <button
                       type="button"
                       onClick={() => abrir(n)}
-                      className="ion-activatable relative flex w-full cursor-pointer items-start gap-3 overflow-hidden border-0 bg-transparent px-0 py-3 text-left"
+                      className="ion-activatable relative flex w-full cursor-pointer items-start gap-3.5 overflow-hidden border-0 border-b border-solid border-divider bg-white px-5 py-3 text-left"
                     >
                       <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
                           n.prioridad === 'alta' ? 'bg-error-rndc-soft text-error-rndc' : 'bg-superficie text-tinta'
                         }`}
                       >
-                        <IonIcon icon={iconoDe(n.tipo)} className="text-[20px]" aria-hidden="true" />
+                        <IonIcon icon={iconoDe(n.tipo)} className="text-[22px]" aria-hidden="true" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className={`block text-[15px] leading-5 text-tinta ${nueva ? 'font-semibold' : 'font-medium'}`}>
+                        <span className={`block text-[16px] leading-[22px] text-tinta ${nueva ? 'font-semibold' : 'font-medium'}`}>
                           {n.titulo}
                         </span>
-                        <span className="mt-[2px] block text-[14px] leading-5 text-tinta">{n.mensaje}</span>
-                        <span className="mt-1 block text-caption text-muted">{formatFechaHora(n.creadaEn)}</span>
+                        <span className="mt-0.5 block text-[15px] leading-[21px] text-tinta">{n.mensaje}</span>
+                        <span className="mt-0.5 block text-[14px] leading-5 text-muted">{formatFechaHora(n.creadaEn)}</span>
                       </span>
-                      {nueva && <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-cielo" aria-label="Sin leer" />}
+                      {nueva && <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-cielo" aria-label="Sin leer" />}
                       <IonRippleEffect />
                     </button>
                   </li>

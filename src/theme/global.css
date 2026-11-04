@@ -139,3 +139,112 @@
     font-weight: var(--text-title--font-weight);
   }
 }
+
+/*
+ * Buttons ("Reglas para que todo se vea de una sola app"): always pills, never outlined.
+ * Verde = main action (default), gris = secondary (`btn-secundario`), rojo suave = help or
+ * danger (`btn-peligro`). Unlayered, so these beat Ionic's ion-button host styles.
+ */
+ion-button {
+  --border-radius: 9999px;
+  --box-shadow: none;
+  /* Ionic md mode uppercases buttons and adds letter-spacing */
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 600;
+}
+
+ion-button.btn-secundario {
+  --ion-color-base: var(--ion-color-light);
+  --ion-color-contrast: var(--ion-color-dark);
+  --ion-color-shade: var(--ion-color-light-shade);
+  --background: var(--ion-color-light);
+  --background-activated: var(--ion-color-dark);
+  --background-activated-opacity: 0.08;
+  --color: var(--ion-color-dark);
+}
+
+ion-button.btn-peligro {
+  --ion-color-base: var(--color-error-rndc-soft);
+  --ion-color-contrast: var(--color-error-rndc);
+  --background: var(--color-error-rndc-soft);
+  --background-activated: var(--color-error-rndc);
+  --background-activated-opacity: 0.08;
+  --color: var(--color-error-rndc);
+}
+
+/* Disabled solid buttons turn gray (as "Registrar entrega" before the form is complete) */
+ion-button.button-solid.button-disabled {
+  --ion-color-base: #e4e9ec;
+  --ion-color-contrast: var(--ion-color-medium);
+  --background: #e4e9ec;
+  --color: var(--ion-color-medium);
+  opacity: 1;
+}
+
+/*
+ * Form fields as in the Login: the label sits above (plain text), the ion-input only
+ * draws the value and a bottom line that turns green on focus.
+ */
+ion-input.app-field {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 1;
+  --highlight-color-focused: var(--ion-color-primary);
+  min-height: 48px;
+  font-size: 18px;
+  border-bottom: 1px solid var(--app-line-color);
+  transition: border-color 0.15s ease;
+}
+
+ion-input.app-field.has-focus {
+  border-bottom-color: var(--ion-color-primary);
+}
+
+ion-input.app-field.ion-invalid.ion-touched {
+  border-bottom-color: var(--ion-color-danger);
+}
+
+/* Long text (observaciones): rounded box with a hairline border */
+ion-textarea.app-textarea {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 1;
+  --border-radius: 20px;
+  min-height: 60px;
+  font-size: 16px;
+  border: 1px solid var(--app-line-color);
+  border-radius: 20px;
+}
+
+ion-textarea.app-textarea.has-focus {
+  border-color: var(--ion-color-primary);
+}
+
+/* Label above a field */
+.app-field-label {
+  display: block;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--ion-color-medium);
+}
+
+ion-textarea.app-textarea.app-invalid {
+  border-color: var(--ion-color-danger);
+}
+
+/* Secondary button inside a gray card, where the gray one would disappear */
+ion-button.btn-blanco {
+  --background: #ffffff;
+  --background-activated: var(--ion-color-dark);
+  --background-activated-opacity: 0.08;
+  --color: var(--ion-color-dark);
+}

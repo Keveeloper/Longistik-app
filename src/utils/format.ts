@@ -49,7 +49,7 @@ const fechaHora = new Intl.DateTimeFormat('es-CO', {
 });
 const hora = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
 const numero = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 });
-const moneda = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+const pesos = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
 
 const toDate = (value: string | Date) => (value instanceof Date ? value : new Date(value));
 
@@ -67,10 +67,35 @@ export const formatKg = (kg: number) => `${numero.format(kg)} kg`;
 
 export const formatNumero = (n: number) => numero.format(n);
 
-/** "$ 3.200.000" */
-export const formatPesos = (value: number) => moneda.format(value);
+/** "$3.200.000", as in the designs (no space, no decimals) */
+export const formatPesos = (value: number) => `${value < 0 ? '-' : ''}$${pesos.format(Math.abs(value))}`;
+
+// Abbreviations that stay uppercase, and words that stay lowercase inside a name
+const SIGLAS = new Set(['SAS', 'S.A.S', 'S.A.S.', 'SA', 'S.A', 'S.A.', 'LTDA', 'LTDA.', 'EU', 'E.U.', 'C.I.', 'D.C', 'D.C.', 'RNDC', 'NIT']);
+const MINUSCULAS = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'e']);
+
+/**
+ * Names and places as the designs show them: "VILLA RICA, CAUCA" → "Villa Rica, Cauca".
+ * Only all-caps text is changed; text that already has lowercase ("HMCL Colombia SAS") is kept.
+ */
+export const tipoOracion = (texto: string | null | undefined) => {
+  if (!texto || /\p{Ll}/u.test(texto)) return texto ?? '';
+  let primera = true;
+  return texto.replace(/[\p{L}\p{M}.]+/gu, (palabra) => {
+    const esPrimera = primera;
+    primera = false;
+    if (SIGLAS.has(palabra)) return palabra;
+    const minuscula = palabra.toLocaleLowerCase('es');
+    if (!esPrimera && MINUSCULAS.has(minuscula)) return minuscula;
+    return minuscula.charAt(0).toLocaleUpperCase('es') + minuscula.slice(1);
+  });
+};
 
 /** "Cali, Valle del Cauca" → "Cali" (the first part is enough on small screens). */
-export const ciudad = (municipio: { nombre: string } | null | undefined) => municipio?.nombre.split(',')[0]?.trim() ?? '';
+export const ciudad = (municipio: { nombre: string } | null | undefined) =>
+  tipoOracion(municipio?.nombre.split(',')[0]?.trim());
+
+/** Full place name: "Villa Rica, Cauca". */
+export const lugar = (municipio: { nombre: string } | null | undefined) => tipoOracion(municipio?.nombre);
 
 export const plural = (count: number, one: string, many: string) => `${formatNumero(count)} ${count === 1 ? one : many}`;

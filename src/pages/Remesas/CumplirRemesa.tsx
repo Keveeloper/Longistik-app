@@ -4,7 +4,6 @@ import {
   IonFooter,
   IonIcon,
   IonInput,
-  IonItem,
   IonPage,
   IonSpinner,
   IonTextarea,
@@ -18,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoAccion } from '../../components/Avisos';
+import { Dato } from '../../components/Detalle';
 import { TiemposEditor, TiemposResumen } from '../../components/TiemposRndc';
 import { useCachedQuery } from '../../hooks/useCachedQuery';
 import { useOnline } from '../../hooks/useOnline';
@@ -42,7 +42,7 @@ import {
 import { operationsService, type RemesaDetalle } from '../../services/operations.service';
 import { useAuthStore } from '../../store/auth.store';
 import { useCompanyStore } from '../../store/company.store';
-import { ciudad, formatFechaHora, formatKg } from '../../utils/format';
+import { ciudad, formatFechaHora, formatKg, tipoOracion } from '../../utils/format';
 import { tiemposIniciales, validarTiempos } from '../../utils/tiempos';
 import './CumplirRemesa.css';
 
@@ -61,14 +61,19 @@ type Resultado =
   | { tipo: 'rechazado'; mensaje: string };
 
 const Paso: React.FC<{ n: number; titulo: string; children: React.ReactNode }> = ({ n, titulo, children }) => (
-  <section className="mt-6 first:mt-0">
-    <h2 className="m-0 mb-3 flex items-center gap-2 text-[17px] leading-6 font-medium text-tinta">
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-tinta text-[13px] font-semibold text-white">{n}</span>
+  <section className="mt-8 first:mt-0">
+    <h2 className="m-0 mb-4 flex items-center gap-3 text-[20px] leading-7 font-semibold text-tinta">
+      <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-tinta text-[13px] font-semibold text-white">
+        {n}
+      </span>
       {titulo}
     </h2>
     {children}
   </section>
 );
+
+/** "una foto, la ubicación y quién recibe" */
+const enumerar = (items: string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`);
 
 /** RNDC times: what will be sent, and the option to adjust them. */
 const TiemposSeccion: React.FC<{
@@ -93,7 +98,7 @@ const TiemposSeccion: React.FC<{
       .finally(() => setCargando(false));
   }, [online, aplica, remesa, propuesta]);
 
-  if (estado?.municipal) return <Aviso>Remesa municipal: el RNDC la cumple con el cumplido del manifiesto.</Aviso>;
+  if (estado?.municipal) return <Aviso>Remesa municipal: el RNDC la cumple junto con el cumplido del manifiesto.</Aviso>;
   if (remesa && remesa.estadoRndc !== 'reportado') {
     return <Aviso>La remesa aún no está aceptada en el RNDC. La oficina enviará el cumplido cuando lo esté.</Aviso>;
   }
@@ -111,7 +116,7 @@ const TiemposSeccion: React.FC<{
   const errorTiempos = editados ? validarTiempos(editados) : null;
 
   return (
-    <div className="rounded-2xl bg-superficie p-4">
+    <div className="rounded-[20px] bg-superficie px-[18px] py-4">
       {editados ? (
         <>
           <TiemposEditor value={editados} onChange={onEditar} />
@@ -169,32 +174,52 @@ const TiemposSeccion: React.FC<{
   );
 };
 
-const ResultadoVista: React.FC<{ resultado: Resultado; onVolver: () => void }> = ({ resultado, onVolver }) => {
+// Round icon on top of the result: green, orange or red
+const RESULTADO_ICONO: Record<Resultado['tipo'], { icon: string; className: string }> = {
+  enviado: { icon: icons.check, className: 'bg-cumplido-soft text-verde' },
+  en_cola: { icon: icons.cloudUpload, className: 'bg-rndc-pendiente-soft text-en-ruta' },
+  rechazado: { icon: icons.alertCircle, className: 'bg-error-rndc-soft text-error-rndc' },
+};
+
+const ResultadoVista: React.FC<{
+  resultado: Resultado;
+  numero: string;
+  /** Who received it and when, as typed in the form */
+  recibio: string;
+  hora: Date | null;
+  onVolver: () => void;
+}> = ({ resultado, numero, recibio, hora, onVolver }) => {
   const rndc = resultado.tipo === 'enviado' ? resultado.registro.entrega.rndc : null;
+  const icono = RESULTADO_ICONO[resultado.tipo];
   return (
-    <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <IonIcon
-        icon={resultado.tipo === 'rechazado' ? icons.alertCircle : resultado.tipo === 'en_cola' ? icons.cloudUpload : icons.circleCheck}
-        className={`text-[64px] ${resultado.tipo === 'rechazado' ? 'text-error-rndc' : resultado.tipo === 'en_cola' ? 'text-en-ruta' : 'text-verde'}`}
-        aria-hidden="true"
-      />
-      <h1 className="mt-4 mb-0 text-[24px] leading-8 font-semibold text-tinta">
+    <div className="flex min-h-full flex-col px-6 pt-[calc(var(--ion-safe-area-top,0px)+93px)] pb-[max(16px,var(--ion-safe-area-bottom,0px))]">
+      <span className={`flex h-[88px] w-[88px] items-center justify-center rounded-full ${icono.className}`}>
+        <IonIcon icon={icono.icon} className="text-[40px]" aria-hidden="true" />
+      </span>
+      <h1 className="mt-7 mb-0 tracking-[-0.5px] text-tinta">
         {resultado.tipo === 'enviado'
           ? 'Entrega registrada'
           : resultado.tipo === 'en_cola'
             ? 'Entrega guardada en el teléfono'
             : 'La entrega no fue aceptada'}
       </h1>
-      <p className="mt-2 mb-0 text-[15px] leading-[22px] text-muted">
+      <p className="mt-3 mb-0 text-[17px] leading-6 text-muted">
         {resultado.tipo === 'enviado'
-          ? 'Las fotos, la ubicación y quién recibió quedaron en la remesa.'
+          ? `Las fotos, la ubicación y quién recibió quedaron guardados en la remesa ${numero}.`
           : resultado.tipo === 'en_cola'
             ? 'Se enviará sola cuando haya señal, con la hora y la ubicación en que se tomó. No borres la app.'
             : resultado.mensaje}
       </p>
 
+      {resultado.tipo !== 'rechazado' && (
+        <div className="mt-8 border-0 border-y border-solid border-divider">
+          <Dato label="Recibió">{recibio}</Dato>
+          {hora && <Dato label="Hora">{formatFechaHora(hora)}</Dato>}
+        </div>
+      )}
+
       {rndc && (
-        <div className="mt-6 w-full text-left">
+        <div className="mt-6">
           {rndc.estado === 'reportado' && <Aviso tono="success">Cumplido reportado al RNDC.</Aviso>}
           {rndc.estado === 'error' && (
             <Aviso tono="error">
@@ -209,7 +234,10 @@ const ResultadoVista: React.FC<{ resultado: Resultado; onVolver: () => void }> =
       )}
       {resultado.tipo === 'en_cola' && resultado.mensaje && <p className="mt-3 mb-0 text-caption text-muted">{resultado.mensaje}</p>}
 
-      <IonButton expand="block" className="mt-8 h-[52px] w-full normal-case tracking-normal" onClick={onVolver}>
+      {/* Pushes the button to the bottom of the screen */}
+      <div className="min-h-8 flex-1" />
+
+      <IonButton expand="block" className="m-0 h-14 w-full text-[17px]" onClick={onVolver}>
         Volver a la remesa
       </IonButton>
     </div>
@@ -335,12 +363,15 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
 
   if (resultado) {
     return (
-      <>
-        <AppHeader title={numero} />
-        <IonContent>
-          <ResultadoVista resultado={resultado} onVolver={volver} />
-        </IonContent>
-      </>
+      <IonContent>
+        <ResultadoVista
+          resultado={resultado}
+          numero={numero}
+          recibio={[tipoOracion(nombre.trim()), documento.trim()].filter(Boolean).join(' · ')}
+          hora={resultado.tipo === 'enviado' ? new Date(resultado.registro.entrega.capturadoEn) : (fotos[0]?.tomadaEn ?? null)}
+          onVolver={volver}
+        />
+      </IonContent>
     );
   }
 
@@ -349,16 +380,20 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
 
   return (
     <>
-      <AppHeader title={`Cumplir ${numero}`} backHref={`/remesas/${remesaId}`} />
+      <AppHeader backHref={`/remesas/${remesaId}`} backIcon={icons.x} />
       <IonContent>
-        <div className="px-4 pt-4 pb-8">
-          {remesa && (
-            <p className="mt-0 mb-5 text-[14px] leading-5 text-muted">
-              {[remesa.cliente?.nombre, `${ciudad(remesa.origen)} → ${ciudad(remesa.destino)}`, formatKg(pesoKg)]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          )}
+        <div className="px-5 pt-1 pb-8">
+          <div className="mb-8">
+            <p className="m-0 text-[14px] leading-5 text-muted">Remesa {numero}</p>
+            <h1 className="mt-2 mb-0 text-[34px] leading-9 tracking-[-0.5px] text-tinta">Registra la entrega</h1>
+            {remesa && (
+              <p className="mt-2 mb-0 text-[16px] leading-[22px] text-muted">
+                {[tipoOracion(remesa.cliente?.nombre), `${ciudad(remesa.origen)} → ${ciudad(remesa.destino)}`, formatKg(pesoKg)]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
+          </div>
 
           {bloqueo ? (
             <Aviso tono="warning">{bloqueo}</Aviso>
@@ -368,12 +403,12 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
                 {/* Location status: every photo is stamped with it */}
                 <div className="mb-3">
                   {ubicacion ? (
-                    <p className="m-0 flex items-center gap-1 text-[13px] leading-[18px] text-cumplido">
+                    <p className="m-0 inline-flex items-center gap-1.5 rounded-full bg-cumplido-soft px-3 py-1.5 text-[14px] leading-5 text-cumplido">
                       <IonIcon icon={icons.mapPin} aria-hidden="true" />
-                      {formatoCoordenadas(ubicacion)} · ±{Math.round(ubicacion.precision)} m
+                      Ubicación lista · {formatoCoordenadas(ubicacion)} · ±{Math.round(ubicacion.precision)} m
                     </p>
                   ) : ubicando ? (
-                    <p className="m-0 flex items-center gap-2 text-[13px] leading-[18px] text-muted">
+                    <p className="m-0 inline-flex items-center gap-2 rounded-full bg-superficie px-3 py-1.5 text-[14px] leading-5 text-muted">
                       <IonSpinner name="crescent" className="h-4 w-4" /> Obteniendo la ubicación…
                     </p>
                   ) : (
@@ -387,7 +422,7 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
 
                 <div className="grid grid-cols-3 gap-2">
                   {fotos.map((f, i) => (
-                    <div key={i} className="relative aspect-square overflow-hidden rounded-xl bg-superficie">
+                    <div key={i} className="relative aspect-square overflow-hidden rounded-2xl bg-superficie">
                       <img src={`data:image/jpeg;base64,${f.base64}`} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
                       <button
                         type="button"
@@ -404,77 +439,78 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
                       type="button"
                       onClick={tomarFoto}
                       disabled={!ubicacion || tomando}
-                      className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line bg-white p-0 text-tinta disabled:cursor-default disabled:opacity-50"
+                      className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-[#c5ced3] bg-white p-0 text-tinta disabled:cursor-default disabled:opacity-50"
                     >
-                      {tomando ? <IonSpinner name="crescent" /> : <IonIcon icon={icons.camera} className="text-[30px]" />}
-                      <span className="text-[13px] leading-[17px] font-medium">{fotos.length ? 'Otra foto' : 'Tomar foto'}</span>
+                      {tomando ? <IonSpinner name="crescent" /> : <IonIcon icon={icons.camera} className="text-[24px]" />}
+                      <span className="text-[14px] leading-[18px] font-semibold">{fotos.length ? 'Otra foto' : 'Tomar foto'}</span>
                     </button>
                   )}
                 </div>
-                <p className="mt-2 mb-0 text-caption text-muted">
-                  La remesa firmada y la mercancía entregada. Cada foto lleva la fecha, la hora y las coordenadas.
+                <p className="mt-3 mb-0 text-[14px] leading-5 text-muted">
+                  La remesa firmada y la mercancía entregada. Cada foto lleva fecha, hora y coordenadas.
                 </p>
               </Paso>
 
               <Paso n={2} titulo="¿Quién recibe?">
-                <div className="rounded-2xl border border-divider">
-                  <IonItem lines="full" className="cumplir-item">
-                    <IonInput
-                      label="Nombre"
-                      labelPlacement="stacked"
-                      placeholder="Nombre de quien recibe"
-                      autocapitalize="words"
-                      value={nombre}
-                      onIonInput={(e) => setNombre(e.detail.value ?? '')}
-                    />
-                  </IonItem>
-                  <IonItem lines="none" className="cumplir-item">
-                    <IonInput
-                      label="Documento (opcional)"
-                      labelPlacement="stacked"
-                      inputmode="numeric"
-                      placeholder="Cédula"
-                      value={documento}
-                      onIonInput={(e) => setDocumento(e.detail.value ?? '')}
-                    />
-                  </IonItem>
-                </div>
+                <label className="block">
+                  <span className="app-field-label">Nombre</span>
+                  <IonInput
+                    className="app-field"
+                    aria-label="Nombre"
+                    placeholder="Nombre de quien recibe"
+                    autocapitalize="words"
+                    value={nombre}
+                    onIonInput={(e) => setNombre(e.detail.value ?? '')}
+                  />
+                </label>
+                <label className="mt-6 block">
+                  <span className="app-field-label">Documento (opcional)</span>
+                  <IonInput
+                    className="app-field"
+                    aria-label="Documento (opcional)"
+                    inputmode="numeric"
+                    placeholder="Cédula"
+                    value={documento}
+                    onIonInput={(e) => setDocumento(e.detail.value ?? '')}
+                  />
+                </label>
               </Paso>
 
               <Paso n={3} titulo="Mercancía">
-                <div className="rounded-2xl border border-divider">
-                  <IonItem lines={completa ? 'none' : 'full'} className="cumplir-item">
-                    <IonToggle checked={completa} onIonChange={(e) => setCompleta(e.detail.checked)} justify="space-between">
-                      Se entregó completa ({formatKg(pesoKg)})
-                    </IonToggle>
-                  </IonItem>
-                  {!completa && (
-                    <IonItem lines="none" className="cumplir-item">
-                      <IonInput
-                        label="Kg entregados"
-                        labelPlacement="stacked"
-                        inputmode="decimal"
-                        value={kg}
-                        onIonInput={(e) => setKg(e.detail.value ?? '')}
-                        errorText={`Entre 0 y ${formatKg(pesoKg)}`}
-                        className={errorKg && kg !== '' ? 'ion-invalid ion-touched' : ''}
-                      />
-                    </IonItem>
-                  )}
-                </div>
-                <div className="mt-3 rounded-2xl border border-divider">
-                  <IonItem lines="none" className="cumplir-item">
-                    <IonTextarea
-                      label="Observaciones (opcional)"
-                      labelPlacement="stacked"
-                      autoGrow
-                      rows={2}
-                      placeholder={completa ? 'Sin novedad' : 'Qué faltó o llegó averiado'}
-                      value={observaciones}
-                      onIonInput={(e) => setObservaciones(e.detail.value ?? '')}
+                <IonToggle
+                  className="cumplir-toggle w-full"
+                  checked={completa}
+                  onIonChange={(e) => setCompleta(e.detail.checked)}
+                  justify="space-between"
+                >
+                  <span className="font-semibold text-tinta">Se entregó completa</span>{' '}
+                  <span className="text-muted">({formatKg(pesoKg)})</span>
+                </IonToggle>
+                {!completa && (
+                  <label className="mt-5 block">
+                    <span className="app-field-label">Kg entregados</span>
+                    <IonInput
+                      className={`app-field ${errorKg && kg !== '' ? 'ion-invalid ion-touched' : ''}`}
+                      aria-label="Kg entregados"
+                      inputmode="decimal"
+                      value={kg}
+                      onIonInput={(e) => setKg(e.detail.value ?? '')}
+                      errorText={`Entre 0 y ${formatKg(pesoKg)}`}
                     />
-                  </IonItem>
-                </div>
+                  </label>
+                )}
+                <label className="mt-5 block">
+                  <span className="app-field-label mb-2">Observaciones (opcional)</span>
+                  <IonTextarea
+                    className="app-textarea"
+                    aria-label="Observaciones (opcional)"
+                    autoGrow
+                    rows={2}
+                    placeholder={completa ? 'Sin novedad' : 'Qué faltó o llegó averiado'}
+                    value={observaciones}
+                    onIonInput={(e) => setObservaciones(e.detail.value ?? '')}
+                  />
+                </label>
               </Paso>
 
               <Paso n={4} titulo="Cumplido RNDC">
@@ -487,10 +523,10 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
 
       {!bloqueo && (
         <IonFooter className="ion-no-border">
-          <IonToolbar className="cumplir-footer">
-            <div className="px-4 pt-2 pb-2">
-              {faltantes.length > 0 && <p className="mt-0 mb-2 text-center text-caption text-muted">Falta {faltantes.join(', ')}</p>}
-              <IonButton expand="block" className="m-0 h-[52px] normal-case tracking-normal" disabled={!!faltantes.length || enviando} onClick={registrar}>
+          <IonToolbar className="app-modal-footer">
+            <div className="px-5 pt-3 pb-2">
+              {faltantes.length > 0 && <p className="mt-0 mb-2.5 text-center text-[14px] leading-5 text-muted">Falta {enumerar(faltantes)}</p>}
+              <IonButton expand="block" className="m-0 h-14 text-[17px]" disabled={!!faltantes.length || enviando} onClick={registrar}>
                 {enviando ? <IonSpinner name="crescent" /> : online ? 'Registrar entrega' : 'Guardar entrega (sin señal)'}
               </IonButton>
             </div>

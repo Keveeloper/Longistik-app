@@ -163,8 +163,11 @@ describe('Driver on the road', () => {
   const visiblePage = () => cy.get('.ion-page:not(.ion-page-hidden)').last();
 
   // Ionicons loads each SVG the first time it is used: wait for the visible ones before a screenshot
+  // (there may be none in view, e.g. the form scrolled down to the fields)
   const screenshot = (name: string) => {
-    visiblePage().find('ion-icon:visible').each((icon) => cy.wrap(icon).shadow().find('svg'));
+    visiblePage().then(($page) => {
+      $page.find('ion-icon:visible').each((_, icon) => void cy.wrap(icon).shadow().find('svg'));
+    });
     cy.screenshot(name, { capture: 'viewport' });
   };
 
@@ -237,14 +240,14 @@ describe('Driver on the road', () => {
     cy.wait('@reenvio').then(() => expect(keys).to.have.length(1));
     visiblePage().contains('Entrega guardada en el teléfono').should('not.exist');
     visiblePage().contains('Cumplida en el RNDC').should('exist');
-    visiblePage().contains('Recibió').should('contain.text', 'Ana Gómez');
+    visiblePage().contains('p', 'Ana Gómez').should('contain.text', 'Recibió');
     screenshot('remesa-cumplida');
   });
 
   it('muestra el manifiesto y lo abre sin señal desde la copia guardada', () => {
     visitSignedIn('/manifiestos');
     cy.contains('MT000812').should('be.visible').click();
-    visiblePage().contains('Válido para mostrar en vía').should('be.visible');
+    visiblePage().contains('Documento listo para mostrar en vía').should('be.visible');
     visiblePage().contains('Guardado en el teléfono').should('be.visible');
     screenshot('manifiesto-detalle');
 

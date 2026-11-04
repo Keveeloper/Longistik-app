@@ -1,0 +1,26 @@
+/* Buttons of the dark document card (layout lives in Tailwind classes) */
+
+/* "Ver manifiesto": white pill on tinta */
+.doc-ver {
+  --background: #ffffff;
+  --background-activated: var(--ion-color-dark);
+  --background-activated-opacity: 0.08;
+  --color: var(--ion-color-dark);
+  font-size: 16px;
+}
+
+/* Refresh / save: round translucent button */
+.doc-actualizar {
+  --background: rgba(255, 255, 255, 0.12);
+  --background-activated: #ffffff;
+  --background-activated-opacity: 0.12;
+  --color: #ffffff;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+/* Keeps it translucent while it downloads (disabled solid buttons turn gray elsewhere) */
+ion-button.button-solid.doc-actualizar.button-disabled {
+  --background: rgba(255, 255, 255, 0.12);
+  --color: rgba(255, 255, 255, 0.6);
+}

@@ -64,21 +64,22 @@ const Compartir: React.FC<{ manifiestoId: number }> = ({ manifiestoId }) => {
             <IonIcon icon={icons.alertCircle} className="text-[64px] text-error-rndc" aria-hidden="true" />
             <p className="m-0 text-[15px] leading-[22px] text-tinta">{estado.mensaje}</p>
             {estado.fase === 'error' && (
-              <IonButton className="normal-case tracking-normal" onClick={enviar}>
+              <IonButton className="m-0 h-14 w-full text-[17px]" onClick={enviar}>
                 Intentar de nuevo
               </IonButton>
             )}
           </>
         )}
         {estado.fase !== 'enviando' && (
-          <div className="mt-2 flex flex-col gap-2">
-            <IonButton fill="outline" color="dark" className="normal-case tracking-normal" onClick={volver}>
+          <div className="mt-2 flex w-full flex-col gap-2">
+            <IonButton expand="block" className="btn-secundario m-0 h-14 text-[17px]" onClick={volver}>
               Volver
             </IonButton>
             <IonButton
+              expand="block"
               fill="clear"
               color="secondary"
-              className="normal-case tracking-normal"
+              className="m-0 h-12 text-[16px]"
               onClick={() => router.push(`/manifiestos/${manifiestoId}?seccion=seguimiento`)}
             >
               Ver el viaje

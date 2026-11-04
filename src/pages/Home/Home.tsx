@@ -199,9 +199,9 @@ const Home: React.FC = () => {
               </IonAvatar>
             </button>
             <div className="-mr-[2px] flex">
-              <IonButton fill="clear" className="home-header-button" aria-label="Mostrar valores" onClick={comingSoon}>
+              {/* <IonButton fill="clear" className="home-header-button" aria-label="Mostrar valores" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.eye} />
-              </IonButton>
+              </IonButton> */}
               <IonButton fill="clear" className="home-header-button" aria-label="Ayuda" onClick={comingSoon}>
                 <IonIcon slot="icon-only" icon={icons.helpCircle} />
               </IonButton>

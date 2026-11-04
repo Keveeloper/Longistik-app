@@ -1,8 +1,9 @@
-/* Tinta toolbar with white text, as the Inicio header */
+/* White toolbar: back arrow and icon buttons only, the title goes below it */
 .app-toolbar {
-  --background: var(--ion-color-dark);
-  --color: #ffffff;
-  --min-height: 56px;
+  --background: #ffffff;
+  --color: var(--ion-color-dark);
+  --border-width: 0;
+  --min-height: 46px;
   --padding-start: 8px;
   --padding-end: 8px;
 }
@@ -11,14 +12,13 @@
   font-size: 18px;
   font-weight: 600;
   letter-spacing: normal;
+  color: var(--ion-color-dark);
 }
 
 .app-toolbar ion-back-button,
 .app-toolbar ion-button {
-  --color: #ffffff;
-  /* Ionic md mode uppercases buttons and adds letter-spacing */
-  text-transform: none;
-  letter-spacing: normal;
+  --color: var(--ion-color-dark);
+  --icon-font-size: 24px;
 }
 
 .app-toolbar ion-button ion-icon,
@@ -26,43 +26,76 @@
   font-size: 24px;
 }
 
-/* Search bar on the tinta header */
-.app-header ion-searchbar {
-  --background: rgba(255, 255, 255, 0.12);
-  --color: #ffffff;
-  --placeholder-color: #ffffff;
-  --placeholder-opacity: 0.7;
-  --icon-color: #ffffff;
-  --clear-button-color: #ffffff;
-  --border-radius: 12px;
-  --box-shadow: none;
-  padding: 0;
-  min-height: 44px;
+/* Disabled icon buttons (e.g. "Marcar todas como leídas" with nothing to mark) look muted, not faded */
+.app-toolbar ion-button.button-disabled {
+  --color: var(--ion-color-medium);
+  opacity: 1;
 }
 
-/* Filters under the search bar */
+/* Search bar: gray pill */
+.app-header ion-searchbar {
+  --background: var(--ion-color-light);
+  --border-radius: 9999px;
+  --box-shadow: none;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 1;
+  --icon-color: var(--ion-color-medium);
+  --clear-button-color: var(--ion-color-medium);
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+}
+
+/* Higher specificity than Ionic's scoped searchbar styles, which load later */
+.app-header ion-searchbar .searchbar-input-container {
+  height: 48px;
+}
+
+.app-header ion-searchbar .searchbar-input {
+  height: 48px;
+  padding-inline-start: 50px;
+  font-size: 16px;
+}
+
+.app-header ion-searchbar .searchbar-search-icon {
+  top: 13px;
+  inset-inline-start: 18px;
+  width: 22px;
+  height: 22px;
+}
+
+/* Filters: pill segmented control, white thumb on superficie */
 .app-header ion-segment {
-  --background: rgba(255, 255, 255, 0.12);
-  margin-top: 10px;
-  border-radius: 12px;
+  --background: var(--ion-color-light);
+  height: 48px;
+  padding: 4px;
+  border-radius: 9999px;
 }
 
 .app-header ion-segment-button {
-  --color: rgba(255, 255, 255, 0.75);
+  --color: var(--ion-color-medium);
   --color-checked: var(--ion-color-dark);
   --indicator-color: #ffffff;
-  --indicator-height: 100%;
-  --indicator-box-shadow: none;
-  --border-radius: 10px;
-  min-height: 36px;
-  font-size: 14px;
-  font-weight: 500;
+  /* Must be a length: 100% resolves to 0 */
+  --indicator-height: 40px;
+  --indicator-box-shadow: 0 1px 4px rgba(21, 55, 65, 0.14);
+  --border-radius: 9999px;
+  --background-hover: transparent;
+  --background-focused: transparent;
+  --padding-start: 0;
+  --padding-end: 0;
+  min-height: 40px;
+  margin: 0;
+  /* md mode uppercases segment labels and adds letter-spacing */
   text-transform: none;
   letter-spacing: normal;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .app-header ion-segment-button::part(indicator-background) {
-  border-radius: 10px;
+  border-radius: 9999px;
 }
 
 /* Scrollable filters (more than fit the width): swipe, without a scrollbar on desktop browsers */
@@ -74,9 +107,9 @@
   display: none;
 }
 
-/* Sticky action area at the bottom of a modal, above the home indicator */
+/* Sticky action area at the bottom of a modal or a full-screen form, above the home indicator */
 .app-modal-footer {
-  --background: var(--ion-background-color);
+  --background: #ffffff;
   --border-width: 1px 0 0;
   --border-color: var(--app-divider-color);
   padding-bottom: var(--ion-safe-area-bottom, 0px);

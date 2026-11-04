@@ -1,7 +1,26 @@
-import { formatCOP, formatDayHeading, formatShortDate, formatTimeAgo, isoDateDaysAgo } from './format';
+import { ciudad, formatCOP, formatDayHeading, formatShortDate, formatPesos, formatTimeAgo, isoDateDaysAgo, tipoOracion } from './format';
 import { matchesQuery } from './search';
 
 describe('format', () => {
+  it('writes all-caps names and places in sentence case', () => {
+    expect(tipoOracion('VILLA RICA, CAUCA')).toBe('Villa Rica, Cauca');
+    expect(tipoOracion('SANTIAGO DE CALI, VALLE DEL CAUCA')).toBe('Santiago de Cali, Valle del Cauca');
+    expect(tipoOracion('BOGOTÁ, D.C.')).toBe('Bogotá, D.C.');
+    expect(tipoOracion('TRANSPORTES EL CÓNDOR S.A.S.')).toBe('Transportes El Cóndor S.A.S.');
+    expect(tipoOracion('CL 10 32 29 BRR COLSEGUROS')).toBe('Cl 10 32 29 Brr Colseguros');
+    // Already cased by a person: untouched
+    expect(tipoOracion('HMCL Colombia SAS')).toBe('HMCL Colombia SAS');
+    expect(tipoOracion(null)).toBe('');
+    expect(ciudad({ nombre: 'VILLA RICA, CAUCA' })).toBe('Villa Rica');
+  });
+
+  it('formats pesos without a space, as in the designs', () => {
+    expect(formatPesos(2500000)).toBe('$2.500.000');
+    expect(formatPesos(10)).toBe('$10');
+    expect(formatPesos(1234.6)).toBe('$1.235');
+    expect(formatPesos(-5000)).toBe('-$5.000');
+  });
+
   it('formats pesos like the designs', () => {
     expect(formatCOP(800000)).toBe('$800.000');
     expect(formatCOP(1350000)).toBe('$1.350.000');

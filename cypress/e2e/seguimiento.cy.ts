@@ -212,10 +212,15 @@ describe('Trip tracking and notifications', () => {
     cy.get('ion-alert input').type('Almuerzo');
     cy.contains('ion-alert button', 'Pausar').click();
     cy.wait('@pausar');
+    // Clicking scrolled the buttons to the top: bring the trip card's title back into view
+    // (`scrollIntoView` doesn't scroll an ion-content)
+    const alInicio = () => visiblePage().find('ion-content').then(($c) => ($c[0] as HTMLIonContentElement).scrollToTop(0));
+    alInicio();
     visiblePage().contains('Seguimiento en pausa').should('be.visible');
     visiblePage().contains('En pausa: Almuerzo').should('be.visible');
     visiblePage().contains('ion-button', 'Reanudar').click();
     cy.wait('@reanudar');
+    alInicio();
     visiblePage().contains('Viaje en curso').should('be.visible');
   });
 

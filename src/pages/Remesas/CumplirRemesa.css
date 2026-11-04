@@ -1,30 +1,21 @@
 /* Ionic internals of the cumplido form (layout lives in Tailwind classes) */
 
-/* Fields inside the rounded bordered blocks */
-.cumplir-item {
-  --background: transparent;
-  --padding-start: 16px;
-  --inner-padding-end: 16px;
-  --border-color: var(--app-divider-color);
-  --color: var(--ion-color-dark);
-  /* ion-label/toggle text inherits its size from the item */
-  font-size: 15px;
-}
-
-.cumplir-item ion-input,
-.cumplir-item ion-textarea {
-  --placeholder-color: var(--ion-color-medium);
-  font-size: 16px;
-}
-
-.cumplir-item ion-toggle {
+/* "Se entregó completa": label on the left, a large green switch on the right */
+.cumplir-toggle {
+  --track-background: #dfe5e8;
   --track-background-checked: var(--ion-color-primary);
+  --handle-background: #ffffff;
+  --handle-background-checked: #ffffff;
+  --handle-width: 28px;
+  --handle-height: 28px;
+  --handle-spacing: 3px;
+  --handle-box-shadow: 0 1px 3px rgba(21, 55, 65, 0.25);
+  --handle-max-height: none;
+  font-size: 17px;
+  line-height: 24px;
 }
 
-/* Sticky submit area above the home indicator */
-.cumplir-footer {
-  --background: var(--ion-background-color);
-  --border-width: 1px 0 0;
-  --border-color: var(--app-divider-color);
-  padding-bottom: var(--ion-safe-area-bottom, 0px);
+.cumplir-toggle::part(track) {
+  width: 56px;
+  height: 34px;
 }

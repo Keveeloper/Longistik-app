@@ -113,12 +113,16 @@ const MisSobreanticipos: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="flex flex-col gap-3 px-4 pt-4 pb-6">
+        <div className="pb-6">
           {!permitido ? (
-            <p className="mt-10 text-center text-body text-muted">No tienes permiso para solicitar sobreanticipos</p>
+            <p className="mt-10 px-5 text-center text-body text-muted">No tienes permiso para solicitar sobreanticipos</p>
           ) : (
             <>
-              <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+              {error && (
+                <div className="px-5 pb-3">
+                  <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+                </div>
+              )}
               {items === null ? (
                 <ListSkeleton />
               ) : items.length === 0 ? (
@@ -129,10 +133,10 @@ const MisSobreanticipos: React.FC = () => {
                 )
               ) : (
                 <>
-                  {!guardadoEn && <p className="m-0 text-caption text-muted">{plural(total, 'solicitud', 'solicitudes')}</p>}
-                  <div className="rounded-2xl border border-divider px-4">
+                  {!guardadoEn && <p className="m-0 px-5 text-[14px] leading-5 text-muted">{plural(total, 'solicitud', 'solicitudes')}</p>}
+                  <div>
                     {items.map((s) => (
-                      <div key={s.id} className="border-0 border-b border-solid border-divider last:border-b-0">
+                      <div key={s.id} className="border-0 border-b border-solid border-divider px-5 [&_.border-b]:border-b-0">
                         <button
                           type="button"
                           aria-label={`Ver ${s.manifiesto ?? 'manifiesto'}`}
@@ -147,7 +151,7 @@ const MisSobreanticipos: React.FC = () => {
                             type="button"
                             disabled={cancelando === s.id}
                             onClick={() => confirmarCancelar(s)}
-                            className="mb-3 cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-error-rndc disabled:opacity-50"
+                            className="mb-3 ml-[58px] cursor-pointer border-0 bg-transparent p-0 text-[14px] leading-5 font-semibold text-error-rndc disabled:opacity-50"
                           >
                             {cancelando === s.id ? 'Cancelando…' : 'Cancelar solicitud'}
                           </button>
