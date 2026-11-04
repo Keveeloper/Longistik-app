@@ -1,4 +1,61 @@
-describe('Auth flow (mock service)', () => {
+// The panel and the company backend (request/mobile-api.md) are stubbed, so the suite runs without real accounts
+describe('Company + auth flow', () => {
+  const despachador = {
+    id: 34,
+    name: 'Andrés',
+    lastName: 'Rojas',
+    email: 'ana@longistik.com',
+    role: 'Despachador',
+    alcance: 'todos',
+    permisos: [
+      'app.acceso',
+      'manifiestos.ver_todos',
+      'manifiestos.crear',
+      'remesas.crear',
+      'remesas.cumplir',
+      'novedades.reportar',
+      'rndc.enviar',
+    ],
+    vehiculos: [],
+  };
+  const conductor = {
+    ...despachador,
+    role: 'Conductor',
+    alcance: 'asignados',
+    permisos: ['app.acceso', 'manifiestos.ver_asignados', 'remesas.cumplir', 'novedades.reportar'],
+    vehiculos: [{ id: 12, placa: 'ABC123', desde: '2026-10-21T00:00:00-05:00', hasta: null }],
+  };
+
+  /** Login and /mobile/me answer with this user */
+  const stubUser = (user: object) => {
+    cy.intercept('POST', '**/mobile/auth/login', (req) => {
+      if (req.body.password === 'error') {
+        req.reply({
+          statusCode: 401,
+          body: { statusCode: 401, code: 'INVALID_CREDENTIALS', message: 'Correo o contraseña incorrectos' },
+        });
+      } else {
+        req.reply({ statusCode: 201, body: { accessToken: 'test.jwt.token', expiresIn: 2592000, user } });
+      }
+    }).as('login');
+    cy.intercept('GET', '**/mobile/me', { body: { ...user, status: true } }).as('me');
+  };
+
+  beforeEach(() => {
+    cy.intercept('GET', '**/api/public/companies*', { fixture: 'companies.json' }).as('companies');
+    stubUser(despachador);
+    cy.intercept('GET', '**/mobile/home/summary', { fixture: 'home-summary.json' }).as('summary');
+    // The Manifiestos/Remesas tabs and the drivers' offline PDFs load lists (cumplido.cy.ts covers them)
+    const empty = { items: [], page: 1, pageSize: 20, total: 0 };
+    cy.intercept('GET', '**/mobile/manifiestos?*', { body: empty });
+    cy.intercept('GET', '**/mobile/remesas?*', { body: empty });
+  });
+
+  const quickActionLabels = () =>
+    cy.get('nav[aria-label="Acciones rápidas"] button').then(($b) => [...$b].map((b) => b.innerText.replace(/\s+/g, ' ')));
+
+  const selectCompany = (name = 'STAGING') => cy.contains('ion-item', name).click();
+
   const login = (password = 'secret') => {
     cy.get('input[autocomplete="username"]').type('ana@longistik.com');
     cy.get('input[type="password"]').type(password);
@@ -17,57 +74,217 @@ describe('Auth flow (mock service)', () => {
   };
 
   // Ionic can leave a page mounted but stuck invisible (opacity 0), so check what's on screen
+  const expectSelectorVisible = () => cy.contains('h1', '¿Para qué empresa trabajas?').should('be.visible');
   const expectLoginVisible = () => cy.contains('h1', 'Tu operación de carga').should('be.visible');
   const expectAppVisible = () => cy.contains('h1', 'Hola, Andrés').should('be.visible');
 
-  it('redirects guests to /login', () => {
+  it('sends first-time visitors to the company selector', () => {
     cy.visit('/remesas');
+    expectStableAt('/empresa');
+    expectSelectorVisible();
+
+    cy.visit('/login');
+    expectStableAt('/empresa');
+    expectSelectorVisible();
+  });
+
+  // `npm run dev` is the test environment (src/config/env.ts); matching rules are unit-tested
+  it('lists only the test company in the test environment', () => {
+    cy.visit('/empresa');
+    // The badge is fixed with pointer-events: none, which Cypress's visibility check reads as covered
+    cy.contains('div', /^Test$/).should('exist');
+    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'STAGING');
+    cy.get('input[type="search"]').type('servicargas');
+    cy.contains('No encontramos empresas').should('be.visible');
+    cy.get('input[type="search"]').clear().type('final');
+    cy.get('ion-item.company-row').should('have.length', 1).and('contain', 'STAGING');
+  });
+
+  it('remembers the company and lets the user change it from the login', () => {
+    cy.visit('/');
+    expectStableAt('/empresa');
+    selectCompany();
     expectStableAt('/login');
     expectLoginVisible();
+    cy.contains('STAGING').should('be.visible');
+
+    // The choice is persisted: reload stays on the login
+    cy.reload();
+    expectStableAt('/login');
+    cy.contains('STAGING').should('be.visible');
+
+    cy.get('button[aria-label="Cambiar de empresa"]').click();
+    expectStableAt('/empresa');
+    expectSelectorVisible();
+
+    selectCompany('STAGING');
+    expectStableAt('/login');
+    cy.contains('STAGING').should('be.visible');
   });
 
   it('shows an error with invalid credentials', () => {
-    cy.visit('/login');
+    cy.visit('/');
+    selectCompany();
     login('error');
-    cy.get('[role="alert"]').should('be.visible').and('contain', 'Usuario o contraseña incorrectos');
+    cy.get('[role="alert"]').should('be.visible').and('contain', 'Correo o contraseña incorrectos');
     expectStableAt('/login');
   });
 
-  it('logs in when entering through the root URL', () => {
+  it('logs in against the selected company backend', () => {
     cy.visit('/');
-    expectStableAt('/login');
-    expectLoginVisible();
+    selectCompany('STAGING');
+    login();
+    cy.wait('@login').then(({ request }) => {
+      expect(request.url).to.eq('https://api.finaltest.longistik.com/mobile/auth/login');
+      expect(request.body).to.deep.eq({ email: 'ana@longistik.com', password: 'secret' });
+    });
+    expectStableAt('/inicio');
+    cy.contains('header', 'STAGING').should('be.visible');
+  });
+
+  it('shows the home summary from the API', () => {
+    cy.visit('/');
+    selectCompany();
+    login();
+    cy.wait('@summary').its('request.headers.authorization').should('eq', 'Bearer test.jwt.token');
+    cy.contains('9 remesas').should('be.visible');
+    cy.contains('4 manifiestos despachados').should('be.visible');
+    cy.contains('Tienes 3 remesas pendientes por enviar al RNDC').should('be.visible');
+    cy.contains('149 de 152 remesas reportadas').should('be.visible');
+    cy.get('.home-row-count').should('have.text', '6');
+  });
+
+  it('shows a retry when the summary fails', () => {
+    cy.intercept('GET', '**/mobile/home/summary', { statusCode: 500, body: { statusCode: 500, message: 'Falla' } });
+    cy.visit('/');
+    selectCompany();
+    login();
+    cy.contains('[role="alert"]', 'Falla').should('be.visible');
+    cy.intercept('GET', '**/mobile/home/summary', { fixture: 'home-summary.json' });
+    cy.contains('[role="alert"] button', 'Reintentar').click();
+    cy.contains('9 remesas').should('be.visible');
+    cy.get('[role="alert"]').should('not.exist');
+  });
+
+  it('closes the session when the user was deactivated', () => {
+    cy.visit('/');
+    selectCompany();
     login();
     expectStableAt('/inicio');
+
+    // On the next launch /mobile/me answers 403 USER_INACTIVE
+    const message = 'Tu usuario está inactivo. Contacta al administrador.';
+    cy.intercept('GET', '**/mobile/me', { statusCode: 403, body: { statusCode: 403, code: 'USER_INACTIVE', message } });
+    cy.reload();
+    expectStableAt('/login');
+    expectLoginVisible();
+    cy.contains('[role="alert"]', message).should('be.visible');
+  });
+
+  it('keeps the session on a 403 FORBIDDEN (missing permission)', () => {
+    const message = 'No tienes permiso para esta acción.';
+    cy.intercept('GET', '**/mobile/home/summary', { statusCode: 403, body: { statusCode: 403, code: 'FORBIDDEN', message } });
+    cy.visit('/');
+    selectCompany();
+    login();
+    cy.contains('[role="alert"]', message).should('be.visible');
+    expectStableAt('/inicio');
     expectAppVisible();
+  });
+
+  it('shows the despachador every action', () => {
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    quickActionLabels().should('deep.eq', ['Ver manifiestos', 'Ver remesas', 'Reportar novedad', 'Cumplir remesa']);
+    // The badge counts the active manifiestos; no remesas to deliver, no badge
+    cy.get('button[aria-label="Ver manifiestos: 6 pendientes"]').should('be.visible');
+    cy.contains('nav[aria-label="Acciones rápidas"] button', 'Ver remesas').should('not.have.attr', 'aria-label');
+    cy.contains('button', 'Revisar y enviar').should('be.visible');
+  });
+
+  it('shows a conductor only their actions and vehicles', () => {
+    stubUser(conductor);
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    quickActionLabels().should('deep.eq', ['Ver manifiestos', 'Ver remesas', 'Reportar novedad', 'Cumplir remesa']);
+    cy.contains('Tienes 3 remesas pendientes').should('be.visible');
+    cy.contains('button', 'Revisar y enviar').should('not.exist');
+    cy.contains('No tienes vehículos asignados').should('not.exist');
+
+    cy.get('button[aria-label="Mi cuenta"]').click();
+    cy.get('ion-action-sheet').should('contain', 'ABC123');
+  });
+
+  it('tells a conductor without vehicles, and picks up a new assignment on resume', () => {
+    stubUser({ ...conductor, vehiculos: [] });
+    cy.visit('/');
+    selectCompany();
+    login();
+    expectAppVisible();
+    cy.contains('No tienes vehículos asignados').should('be.visible');
+    cy.contains('ion-item', 'Mis manifiestos activos').should('not.exist');
+
+    // The admin assigns a vehicle while the app is in the background
+    stubUser(conductor);
+    cy.document().then((doc) => doc.dispatchEvent(new Event('visibilitychange')));
+    cy.wait('@me');
+    cy.contains('No tienes vehículos asignados').should('not.exist');
+    cy.contains('ion-item', 'Mis manifiestos activos').should('be.visible');
+  });
+
+  it('requests a password reset email', () => {
+    cy.intercept('POST', '**/public/authentication/forgot-password', { statusCode: 201, body: {} }).as('forgot');
+    cy.visit('/');
+    selectCompany();
+    cy.contains('button', '¿Olvidaste tu contraseña?').click();
+    cy.contains('[role="alert"]', 'Ingresa tu correo').should('be.visible');
+    cy.get('input[autocomplete="username"]').type('ana@longistik.com');
+    cy.contains('button', '¿Olvidaste tu contraseña?').click();
+    cy.wait('@forgot').its('request.body').should('deep.eq', { email: 'ana@longistik.com' });
+    // The toast message renders inside its Shadow DOM
+    cy.get('ion-toast').shadow().find('.toast-message').should('contain.text', 'te enviaremos un enlace');
   });
 
   it('navigates tabs, keeps the session after reload, logs out and back in', () => {
-    cy.visit('/login');
+    cy.visit('/');
+    selectCompany();
     login();
     expectStableAt('/inicio');
     expectAppVisible();
+    cy.contains('header', 'STAGING').should('be.visible');
 
     // Switching tabs must not be hijacked by a stale redirect
     cy.get('ion-tab-button[tab="remesas"]').click();
     expectStableAt('/remesas');
-    cy.contains('h1', 'Remesas').should('be.visible');
+    cy.contains('ion-content', 'No tienes remesas por entregar').should('be.visible');
 
     // Session persisted: reload stays inside the app
     cy.reload();
     expectStableAt('/remesas');
-    cy.contains('h1', 'Remesas').should('be.visible');
+    cy.contains('ion-content', 'No tienes remesas por entregar').should('be.visible');
 
-    // Logged-in users can't go back to /login
+    // Logged-in users can't go back to the entry screens
     cy.visit('/login');
     expectStableAt('/inicio');
     expectAppVisible();
+    cy.visit('/empresa');
+    expectStableAt('/inicio');
+    expectAppVisible();
+    cy.visit('/');
+    expectStableAt('/inicio');
+    expectAppVisible();
 
-    // Logout lives in the account menu (avatar)
+    // Logout lives in the account menu (avatar); the company is kept
     cy.get('button[aria-label="Mi cuenta"]').click();
     cy.contains('ion-action-sheet button', 'Cerrar sesión').click();
     expectStableAt('/login');
     expectLoginVisible();
+    // Scoped to the login: the hidden Inicio page also shows the company name
+    cy.get('button[aria-label="Cambiar de empresa"]').parent().should('contain', 'STAGING');
 
     login();
     expectStableAt('/inicio');

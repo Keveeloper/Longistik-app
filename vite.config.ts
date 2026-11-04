@@ -12,6 +12,16 @@ export default defineConfig({
     tailwindcss(),
     legacy()
   ],
+  server: {
+    // The panel's CORS only allows its own web: proxy the public directory in dev
+    proxy: {
+      '/panel-api': {
+        target: 'https://api.panel.longistik.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/panel-api/, ''),
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

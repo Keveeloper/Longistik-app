@@ -1,0 +1,67 @@
+/* Ionic component internals for the company selector (layout lives in Tailwind classes) */
+
+/* Underlined search field, same look as the login fields */
+.company-search {
+  --padding-start: 0;
+  --padding-end: 0;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  font-size: 18px;
+  border-bottom: 1px solid var(--app-line-color);
+  transition: border-color 0.15s ease;
+}
+
+.company-search.has-focus {
+  border-bottom-color: var(--ion-color-primary);
+}
+
+.company-search ion-icon[slot='start'] {
+  margin-inline-end: 8px;
+  font-size: 20px;
+  color: var(--ion-color-medium);
+}
+
+.company-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0;
+  background: transparent;
+}
+
+/* Superficie blocks, like "Mis manifiestos activos" in Inicio */
+.company-row {
+  --background: var(--ion-color-light);
+  --border-radius: 16px;
+  --min-height: 64px;
+  --padding-start: 12px;
+  --inner-padding-end: 16px;
+  --color: var(--ion-color-dark);
+  /* ion-label inherits its size from the item (Ionic: .item ion-label { font-size: inherit }) */
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.company-row [slot='start'] {
+  margin-inline-end: 12px;
+}
+
+.company-row .company-code {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 400;
+  color: var(--ion-color-medium);
+}
+
+.company-chevron {
+  font-size: 20px;
+  color: var(--ion-color-medium);
+}
+
+.company-button {
+  --border-radius: 9999px;
+  --box-shadow: none;
+  --padding-start: 20px;
+  --padding-end: 20px;
+}

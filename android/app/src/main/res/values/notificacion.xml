@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Verde acción (primary) of the visual system -->
+    <color name="notificacion">#3A8250</color>
+</resources>

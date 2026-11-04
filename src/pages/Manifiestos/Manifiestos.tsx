@@ -1,101 +1,161 @@
-import { useMemo, useState } from 'react';
-import { IonContent, IonIcon, IonItem, IonLabel, IonList, IonPage, useIonToast } from '@ionic/react';
-import FilterChips, { type FilterOption } from '../../components/FilterChips';
-import ListPageHeader from '../../components/ListPageHeader';
-import PageTitleBar from '../../components/PageTitleBar';
-import RndcStatus from '../../components/RndcStatus';
-import SearchBar from '../../components/SearchBar';
-import StatusBadge from '../../components/StatusBadge';
-import { manifiestosMock } from '../../data/manifiestos.mock';
+import {
+  IonContent,
+  IonIcon,
+  IonInfiniteScroll,
+  IonInfiniteScrollContent,
+  IonPage,
+  IonRefresher,
+  IonRefresherContent,
+  IonRippleEffect,
+  IonSearchbar,
+  IonSegment,
+  IonSegmentButton,
+  IonSkeletonText,
+  useIonRouter,
+  useIonViewWillEnter,
+  type RefresherEventDetail,
+} from '@ionic/react';
+import { useEffect, useState } from 'react';
+import AppHeader from '../../components/AppHeader';
+import { AvisoSinConexion } from '../../components/Avisos';
+import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
+import { usePagedList } from '../../hooks/usePagedList';
 import { icons } from '../../icons';
-import { formatCOP, formatShortDate } from '../../utils/format';
-import { matchesQuery } from '../../utils/search';
-import './Manifiestos.css';
+import { operationsService, type EstadoManifiesto, type Manifiesto } from '../../services/operations.service';
+import { useCompanyStore } from '../../store/company.store';
+import { documentoKey, useDocumentosStore } from '../../store/documentos.store';
+import { ciudad, formatFecha, plural } from '../../utils/format';
 
-type Filtro = 'todos' | 'activos' | 'inactivos';
+type Filtro = EstadoManifiesto | 'todos';
 
-const filtros: FilterOption<Filtro>[] = [
+const filtros: { value: Filtro; label: string }[] = [
+  { value: 'activo', label: 'Activos' },
+  { value: 'cumplido', label: 'Cumplidos' },
   { value: 'todos', label: 'Todos' },
-  { value: 'activos', label: 'Activos' },
-  { value: 'inactivos', label: 'Inactivos' },
 ];
 
-const Manifiestos: React.FC = () => {
-  const [query, setQuery] = useState('');
-  const [filtro, setFiltro] = useState<Filtro>('todos');
-  const [presentToast] = useIonToast();
+export const ListSkeleton: React.FC = () => (
+  <div className="flex flex-col gap-3">
+    {[0, 1, 2].map((i) => (
+      <div key={i} className="rounded-2xl border border-divider p-4">
+        <IonSkeletonText animated style={{ width: '40%', height: 18 }} />
+        <IonSkeletonText animated style={{ width: '70%', height: 14, marginTop: 10 }} />
+        <IonSkeletonText animated style={{ width: '55%', height: 14, marginTop: 6 }} />
+      </div>
+    ))}
+  </div>
+);
 
-  const manifiestos = useMemo(
-    () =>
-      manifiestosMock.filter(
-        (m) =>
-          matchesQuery(query, [m.numero, m.origen, m.destino, m.placa]) &&
-          (filtro === 'todos' || (filtro === 'activos' ? m.estado === 'activo' : m.estado === 'inactivo')),
-      ),
-    [query, filtro],
+const ManifiestoCard: React.FC<{ manifiesto: Manifiesto; guardado: boolean }> = ({ manifiesto: m, guardado }) => {
+  const router = useIonRouter();
+  return (
+    <button
+      type="button"
+      onClick={() => router.push(`/manifiestos/${m.id}`)}
+      className="ion-activatable relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-divider bg-white p-4 text-left"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[17px] leading-6 font-semibold text-tinta">{m.numero}</span>
+        <EstadoBadge estado={m.estado} />
+      </div>
+      <p className="mt-1 mb-0 text-[14px] leading-5 text-tinta">
+        {ciudad(m.origen) || 'Sin origen'} → {ciudad(m.destino) || 'Sin destino'}
+      </p>
+      <p className="mt-1 mb-0 text-[13px] leading-[18px] text-muted">
+        {[m.placa, m.conductor?.nombre, formatFecha(m.fechaExpedicion)].filter(Boolean).join(' · ')}
+      </p>
+      <div className="mt-2 flex items-center justify-between">
+        <RndcEstado estado={m.estadoRndc} />
+        <span className="flex items-center gap-2 text-caption text-muted">
+          {guardado && <IonIcon icon={icons.deviceMobile} aria-label="Guardado en el teléfono" className="text-[16px] text-verde" />}
+          {plural(m.remesas, 'remesa', 'remesas')}
+        </span>
+      </div>
+      <IonRippleEffect />
+    </button>
+  );
+};
+
+/** Manifiestos tab: the ones the user can see (their vehicles' for drivers), filterable and searchable. */
+const Manifiestos: React.FC = () => {
+  const [filtro, setFiltro] = useState<Filtro>('activo');
+  const [q, setQ] = useState('');
+  const companyCode = useCompanyStore((s) => s.company?.code ?? '');
+  const documentos = useDocumentosStore((s) => s.documentos);
+
+  const { items, total, error, guardadoEn, reload, loadMore, hasMore } = usePagedList<Manifiesto>(
+    q ? null : `manifiestos:${filtro}`,
+    (page, pageSize) =>
+      operationsService.manifiestos({ estado: filtro === 'todos' ? undefined : filtro, q: q || undefined, page, pageSize })
   );
 
-  // TODO: "Nuevo manifiesto" and "Detalle de manifiesto" screens
-  const comingSoon = () =>
-    presentToast({ message: 'Disponible próximamente', duration: 2000, position: 'bottom' });
+  useEffect(() => {
+    reload();
+  }, [reload, filtro, q]);
+
+  useIonViewWillEnter(() => {
+    reload();
+  }, [reload]);
+
+  const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
+    await reload();
+    e.detail.complete();
+  };
 
   return (
     <IonPage>
-      <ListPageHeader>
-        <PageTitleBar title="Manifiestos" addLabel="Nuevo manifiesto" onAdd={comingSoon} />
-
-        <SearchBar
-          className="mt-4.5"
-          placeholder="Buscar por número, ruta o placa"
-          value={query}
-          onChange={setQuery}
+      <AppHeader title="Manifiestos">
+        <IonSearchbar
+          value={q}
+          debounce={400}
+          placeholder="Número, placa o conductor"
+          searchIcon={icons.search}
+          onIonInput={(e) => setQ((e.detail.value ?? '').trim())}
         />
-
-        <FilterChips
-          className="mt-4.5"
-          options={filtros}
-          value={filtro}
-          onChange={setFiltro}
-          ariaLabel="Filtrar por estado"
-        />
-
-        <p className="mt-3.5 mb-0 text-[13px] leading-4 text-muted">
-          {manifiestos.length} {manifiestos.length === 1 ? 'manifiesto' : 'manifiestos'} · últimos 7 días
-        </p>
-      </ListPageHeader>
+        <IonSegment value={filtro} onIonChange={(e) => setFiltro(e.detail.value as Filtro)}>
+          {filtros.map((f) => (
+            <IonSegmentButton key={f.value} value={f.value}>
+              {f.label}
+            </IonSegmentButton>
+          ))}
+        </IonSegment>
+      </AppHeader>
 
       <IonContent>
-        {manifiestos.length > 0 ? (
-          <IonList lines="full" className="manifiestos-list">
-            {manifiestos.map((m) => (
-              <IonItem key={m.numero} button detail={false} className="manifiestos-item" onClick={comingSoon}>
-                <span
-                  slot="start"
-                  className="m-0 me-3.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-superficie"
-                >
-                  <IonIcon icon={icons.truck} className="text-[22px] text-tinta" />
-                </span>
-                <IonLabel className="mx-0 mt-1 mb-0">
-                  <div className="text-[16px] leading-5 font-semibold text-tinta">{m.numero}</div>
-                  <div className="mt-0.75 truncate text-[14px] leading-5 text-muted">
-                    {m.origen} → {m.destino}
-                  </div>
-                  <div className="text-[13px] leading-5 text-muted">
-                    <RndcStatus estado={m.rndc} />
-                    <span className="mx-1.5">·</span>
-                    {formatShortDate(m.fecha)}
-                  </div>
-                </IonLabel>
-                <div slot="end" className="m-0 ms-3 flex flex-col items-end gap-1">
-                  <span className="text-[15px] leading-5 font-semibold text-tinta">{formatCOP(m.valor)}</span>
-                  <StatusBadge estado={m.estado} />
-                </div>
-              </IonItem>
-            ))}
-          </IonList>
-        ) : (
-          <p className="mt-10 px-5 text-center text-[14px] text-muted">No hay manifiestos que coincidan con la búsqueda.</p>
-        )}
+        <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
+          <IonRefresherContent />
+        </IonRefresher>
+
+        <div className="flex flex-col gap-3 px-4 pt-4 pb-6">
+          <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+
+          {items === null ? (
+            <ListSkeleton />
+          ) : items.length === 0 ? (
+            !error && (
+              <p className="mt-10 text-center text-body text-muted">
+                {q ? 'Ningún manifiesto coincide con la búsqueda' : 'No hay manifiestos'}
+              </p>
+            )
+          ) : (
+            <>
+              {!guardadoEn && <p className="m-0 text-caption text-muted">{plural(total, 'manifiesto', 'manifiestos')}</p>}
+              {items.map((m) => (
+                <ManifiestoCard key={m.id} manifiesto={m} guardado={!!documentos[documentoKey(companyCode, m.id)]} />
+              ))}
+            </>
+          )}
+        </div>
+
+        <IonInfiniteScroll
+          disabled={!hasMore || !!guardadoEn}
+          onIonInfinite={async (e) => {
+            await loadMore();
+            e.target.complete();
+          }}
+        >
+          <IonInfiniteScrollContent />
+        </IonInfiniteScroll>
       </IonContent>
     </IonPage>
   );

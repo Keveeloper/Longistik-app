@@ -6,10 +6,14 @@ import { preferencesStorage } from '../storage/preferencesStorage';
 interface AuthState {
   token: string | null;
   user: User | null;
+  /** Why the session was closed without the user asking (expired, deactivated); shown on the login. */
+  notice: string | null;
   /** False until the persisted session has been read from storage. */
   hasHydrated: boolean;
   setSession: (token: string, user: User) => void;
-  logout: () => void;
+  /** Fresh profile from `GET /mobile/me`. */
+  setUser: (user: User) => void;
+  logout: (notice?: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -17,12 +21,17 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       token: null,
       user: null,
+      notice: null,
       hasHydrated: false,
-      setSession: (token, user) => set({ token, user }),
-      logout: () => set({ token: null, user: null }),
+      setSession: (token, user) => set({ token, user, notice: null }),
+      setUser: (user) => set({ user }),
+      logout: (notice) => set({ token: null, user: null, notice: notice ?? null }),
     }),
     {
       name: 'auth',
+      // v1: sessions from the real /mobile/auth/login. Older (mock) sessions are dropped.
+      version: 1,
+      migrate: () => ({ token: null, user: null }),
       storage: createJSONStorage(() => preferencesStorage),
       // Only the session is persisted, not runtime flags
       partialize: ({ token, user }) => ({ token, user }),

@@ -1,0 +1,83 @@
+/* Tinta toolbar with white text, as the Inicio header */
+.app-toolbar {
+  --background: var(--ion-color-dark);
+  --color: #ffffff;
+  --min-height: 56px;
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+.app-toolbar ion-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.app-toolbar ion-back-button,
+.app-toolbar ion-button {
+  --color: #ffffff;
+  /* Ionic md mode uppercases buttons and adds letter-spacing */
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app-toolbar ion-button ion-icon,
+.app-toolbar ion-back-button {
+  font-size: 24px;
+}
+
+/* Search bar on the tinta header */
+.app-header ion-searchbar {
+  --background: rgba(255, 255, 255, 0.12);
+  --color: #ffffff;
+  --placeholder-color: #ffffff;
+  --placeholder-opacity: 0.7;
+  --icon-color: #ffffff;
+  --clear-button-color: #ffffff;
+  --border-radius: 12px;
+  --box-shadow: none;
+  padding: 0;
+  min-height: 44px;
+}
+
+/* Filters under the search bar */
+.app-header ion-segment {
+  --background: rgba(255, 255, 255, 0.12);
+  margin-top: 10px;
+  border-radius: 12px;
+}
+
+.app-header ion-segment-button {
+  --color: rgba(255, 255, 255, 0.75);
+  --color-checked: var(--ion-color-dark);
+  --indicator-color: #ffffff;
+  --indicator-height: 100%;
+  --indicator-box-shadow: none;
+  --border-radius: 10px;
+  min-height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app-header ion-segment-button::part(indicator-background) {
+  border-radius: 10px;
+}
+
+/* Scrollable filters (more than fit the width): swipe, without a scrollbar on desktop browsers */
+.app-header ion-segment.segment-scrollable {
+  scrollbar-width: none;
+}
+
+.app-header ion-segment.segment-scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sticky action area at the bottom of a modal, above the home indicator */
+.app-modal-footer {
+  --background: var(--ion-background-color);
+  --border-width: 1px 0 0;
+  --border-color: var(--app-divider-color);
+  padding-bottom: var(--ion-safe-area-bottom, 0px);
+}

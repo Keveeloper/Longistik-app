@@ -2,7 +2,8 @@ import { defineConfig } from "cypress";
 
 export default defineConfig({
   e2e: {
-    baseUrl: "http://localhost:5173",
+    // `npm run dev:e2e`: its own mode (.env.e2e) and port, independent of `npm run dev`
+    baseUrl: "http://localhost:5174",
     // Phone viewport matching the designs (iPhone 14, 390x844)
     viewportWidth: 390,
     viewportHeight: 844,
