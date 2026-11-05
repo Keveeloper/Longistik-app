@@ -13,13 +13,15 @@ const ESTADOS: Record<Estado, { label: string; className: string }> = {
   inactivo: { label: 'Anulado', className: 'bg-inactivo-soft text-inactivo' },
 };
 
-const RNDC: Record<EstadoRndc, { label: string; dot: string }> = {
-  reportado: { label: 'Reportado RNDC', dot: 'bg-rndc-reportado' },
-  pendiente: { label: 'Pendiente RNDC', dot: 'bg-rndc-pendiente' },
-  error: { label: 'Error RNDC', dot: 'bg-error-rndc' },
+// `lista`: rows of the lists ("RNDC reportado"); `dato`: value of a detail row, whose label already says RNDC
+const RNDC: Record<EstadoRndc, { lista: string; dato: string; dot: string }> = {
+  reportado: { lista: 'RNDC reportado', dato: 'Reportado', dot: 'bg-rndc-reportado' },
+  pendiente: { lista: 'RNDC pendiente', dato: 'Pendiente', dot: 'bg-rndc-pendiente' },
+  error: { lista: 'Error RNDC', dato: 'Con error', dot: 'bg-error-rndc' },
 };
 
-const base = 'inline-flex shrink-0 items-center rounded-full px-2 py-[2px] text-badge uppercase';
+// States in UPPERCASE inside the chip
+const base = 'inline-flex shrink-0 items-center rounded-full px-2.5 py-[2px] text-badge whitespace-nowrap uppercase';
 
 /** Operating status pill (remesa or manifiesto). */
 export const EstadoBadge: React.FC<{ estado: Estado; label?: string }> = ({ estado, label }) => {
@@ -28,12 +30,20 @@ export const EstadoBadge: React.FC<{ estado: Estado; label?: string }> = ({ esta
 };
 
 /** RNDC sync state: colored dot + text. */
-export const RndcEstado: React.FC<{ estado: EstadoRndc; label?: string }> = ({ estado, label }) => {
-  const { label: defaultLabel, dot } = RNDC[estado] ?? RNDC.pendiente;
+export const RndcEstado: React.FC<{ estado: EstadoRndc; label?: string; variante?: 'lista' | 'dato' }> = ({
+  estado,
+  label,
+  variante = 'lista',
+}) => {
+  const rndc = RNDC[estado] ?? RNDC.pendiente;
   return (
-    <span className="inline-flex items-center gap-[6px] text-caption text-muted">
-      <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
-      {label ?? defaultLabel}
+    <span
+      className={`inline-flex items-center gap-2 ${
+        variante === 'dato' ? 'text-[15px] leading-[22px] font-semibold text-tinta' : 'text-[14px] leading-5 text-muted'
+      }`}
+    >
+      <span className={`h-2 w-2 shrink-0 rounded-full ${rndc.dot}`} aria-hidden="true" />
+      {label ?? rndc[variante]}
     </span>
   );
 };

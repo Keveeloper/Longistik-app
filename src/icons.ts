@@ -13,7 +13,9 @@ import bell from '@tabler/icons/outline/bell.svg';
 import building from '@tabler/icons/outline/building.svg';
 import camera from '@tabler/icons/outline/camera.svg';
 import cash from '@tabler/icons/outline/cash.svg';
+import check from '@tabler/icons/outline/check.svg';
 import checks from '@tabler/icons/outline/checks.svg';
+import chevronLeft from '@tabler/icons/outline/chevron-left.svg';
 import chevronRight from '@tabler/icons/outline/chevron-right.svg';
 import circleCheck from '@tabler/icons/outline/circle-check.svg';
 import clipboardCheck from '@tabler/icons/outline/clipboard-check.svg';
@@ -26,6 +28,7 @@ import fileDescription from '@tabler/icons/outline/file-description.svg';
 import fileText from '@tabler/icons/outline/file-text.svg';
 import flag from '@tabler/icons/outline/flag.svg';
 import helpCircle from '@tabler/icons/outline/help-circle.svg';
+import infoCircle from '@tabler/icons/outline/info-circle.svg';
 import lifebuoy from '@tabler/icons/outline/lifebuoy.svg';
 import logout from '@tabler/icons/outline/logout.svg';
 import mapPin from '@tabler/icons/outline/map-pin.svg';
@@ -60,7 +63,9 @@ export const icons = {
   building,
   camera,
   cash,
+  check,
   checks,
+  chevronLeft,
   chevronRight,
   circleCheck,
   clipboardCheck,
@@ -73,6 +78,7 @@ export const icons = {
   fileText,
   flag,
   helpCircle,
+  infoCircle,
   home,
   lifebuoy,
   logout,

@@ -6,13 +6,13 @@ import { formatFechaHora } from '../utils/format';
 type Tono = 'info' | 'warning' | 'error' | 'success';
 
 const TONOS: Record<Tono, { box: string; icon: string; text: string }> = {
-  info: { box: 'bg-superficie', icon: icons.alertCircle, text: 'text-tinta' },
+  info: { box: 'bg-superficie', icon: icons.infoCircle, text: 'text-tinta' },
   warning: { box: 'bg-rndc-pendiente-soft', icon: icons.alertTriangle, text: 'text-en-ruta' },
   error: { box: 'bg-error-rndc-soft', icon: icons.alertCircle, text: 'text-error-rndc' },
   success: { box: 'bg-cumplido-soft', icon: icons.circleCheck, text: 'text-cumplido' },
 };
 
-/** Rounded callout with an icon, as the ones on Inicio. */
+/** Rounded callout with an icon: gray = information, green = success, orange = pending, red = error. */
 export const Aviso: React.FC<{ tono?: Tono; icon?: string; children: ReactNode; action?: ReactNode; className?: string }> = ({
   tono = 'info',
   icon,
@@ -22,9 +22,13 @@ export const Aviso: React.FC<{ tono?: Tono; icon?: string; children: ReactNode; 
 }) => {
   const t = TONOS[tono];
   return (
-    <div role={tono === 'error' ? 'alert' : undefined} className={`flex items-start gap-3 rounded-2xl px-4 py-3 ${t.box} ${className}`}>
-      <IonIcon icon={icon ?? t.icon} className={`mt-[1px] shrink-0 text-[20px] ${t.text}`} aria-hidden="true" />
-      <div className={`min-w-0 flex-1 text-[14px] leading-5 ${t.text}`}>{children}</div>
+    <div role={tono === 'error' ? 'alert' : undefined} className={`flex items-start gap-3 rounded-[20px] px-[18px] py-3.5 ${t.box} ${className}`}>
+      <IonIcon
+        icon={icon ?? t.icon}
+        className={`mt-[1px] shrink-0 text-[20px] ${tono === 'info' ? 'text-muted' : t.text}`}
+        aria-hidden="true"
+      />
+      <div className={`min-w-0 flex-1 text-[15px] leading-[21px] ${t.text}`}>{children}</div>
       {action}
     </div>
   );

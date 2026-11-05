@@ -1,12 +1,10 @@
 import {
   IonContent,
-  IonIcon,
   IonInfiniteScroll,
   IonInfiniteScrollContent,
   IonPage,
   IonRefresher,
   IonRefresherContent,
-  IonRippleEffect,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -18,14 +16,15 @@ import { useEffect, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import { AvisoSinConexion } from '../../components/Avisos';
 import ColaCumplidos from '../../components/ColaCumplidos';
+import { FilaLista } from '../../components/Detalle';
 import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
 import { usePagedList } from '../../hooks/usePagedList';
 import { icons } from '../../icons';
 import { colaDeSesion } from '../../offline/cumplidos';
 import { operationsService, REMESAS_POR_ENTREGAR, type EstadoRemesa, type Remesa } from '../../services/operations.service';
 import { useCumplidosQueue } from '../../store/cumplidosQueue.store';
-import { ciudad, formatFecha, formatKg, plural } from '../../utils/format';
-import { ListSkeleton } from '../Manifiestos/Manifiestos';
+import { ciudad, formatFecha, formatKg, plural, tipoOracion } from '../../utils/format';
+import { FilaCabecera, ListSkeleton } from '../Manifiestos/Manifiestos';
 
 type Filtro = 'por_entregar' | 'cumplido' | 'todas';
 
@@ -35,31 +34,25 @@ const filtros: { value: Filtro; label: string; estado?: EstadoRemesa[] }[] = [
   { value: 'todas', label: 'Todas' },
 ];
 
-const RemesaCard: React.FC<{ remesa: Remesa; enCola: boolean }> = ({ remesa: r, enCola }) => {
+const RemesaFila: React.FC<{ remesa: Remesa; enCola: boolean }> = ({ remesa: r, enCola }) => {
   const router = useIonRouter();
   return (
-    <button
-      type="button"
-      onClick={() => router.push(`/remesas/${r.id}`)}
-      className="ion-activatable relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-divider bg-white p-4 text-left"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[17px] leading-6 font-semibold text-tinta">{r.numero}</span>
-        {enCola ? <EstadoBadge estado="en_ruta" label="Entrega en cola" /> : <EstadoBadge estado={r.estado} />}
-      </div>
-      <p className="mt-1 mb-0 truncate text-[14px] leading-5 text-tinta">{r.cliente?.nombre ?? 'Sin cliente'}</p>
-      <p className="mt-1 mb-0 text-[13px] leading-[18px] text-muted">
-        {ciudad(r.origen) || 'Sin origen'} → {ciudad(r.destino) || 'Sin destino'} · {formatFecha(r.fecha)}
+    <FilaLista icon={icons.fileDescription} onClick={() => router.push(`/remesas/${r.id}`)}>
+      <FilaCabecera
+        numero={r.numero}
+        badge={enCola ? <EstadoBadge estado="en_ruta" label="Entrega en cola" /> : <EstadoBadge estado={r.estado} />}
+      />
+      <p className="mt-0.5 mb-0 truncate text-[16px] leading-[22px] text-tinta">
+        {ciudad(r.origen) || 'Sin origen'} → {ciudad(r.destino) || 'Sin destino'}
       </p>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <p className="m-0 truncate text-[14px] leading-5 text-muted">
+        {[tipoOracion(r.cliente?.nombre) || 'Sin cliente', formatFecha(r.fecha)].join(' · ')}
+      </p>
+      <p className="m-0 flex min-w-0 items-center gap-1 text-[14px] leading-5 text-muted">
         <RndcEstado estado={r.estadoRndc} />
-        <span className="flex min-w-0 items-center gap-1 text-caption text-muted">
-          <IonIcon icon={icons.package} className="shrink-0 text-[15px]" aria-hidden="true" />
-          <span className="truncate">{[r.producto, formatKg(r.pesoKg)].filter(Boolean).join(' · ')}</span>
-        </span>
-      </div>
-      <IonRippleEffect />
-    </button>
+        <span className="truncate">· {[r.producto, formatKg(r.pesoKg)].filter(Boolean).join(' · ')}</span>
+      </p>
+    </FilaLista>
   );
 };
 
@@ -115,9 +108,11 @@ const Remesas: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="flex flex-col gap-3 px-4 pt-4 pb-6">
-          <ColaCumplidos />
-          <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+        <div className="pb-6">
+          <div className="flex flex-col gap-3 px-5 pb-3 empty:hidden">
+            <ColaCumplidos />
+            <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+          </div>
 
           {items === null ? (
             <ListSkeleton />
@@ -129,9 +124,9 @@ const Remesas: React.FC = () => {
             )
           ) : (
             <>
-              {!guardadoEn && <p className="m-0 text-caption text-muted">{plural(total, 'remesa', 'remesas')}</p>}
+              {!guardadoEn && <p className="m-0 px-5 text-[14px] leading-5 text-muted">{plural(total, 'remesa', 'remesas')}</p>}
               {items.map((r) => (
-                <RemesaCard key={r.id} remesa={r} enCola={enCola.has(r.id)} />
+                <RemesaFila key={r.id} remesa={r} enCola={enCola.has(r.id)} />
               ))}
             </>
           )}

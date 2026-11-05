@@ -1,0 +1,16 @@
+/* Ionic component internals for Manifiestos (layout lives in Tailwind classes) */
+
+/* Ionic's scoped .list-md padding beats Tailwind utilities */
+ion-list.manifiestos-list {
+  padding: 0;
+}
+
+/* List rows: full-width soft dividers, no Ionic item chrome. 91px + 1px border = 92px rows */
+.manifiestos-item {
+  --padding-start: 20px;
+  --inner-padding-end: 20px;
+  --min-height: 91px;
+  --border-color: var(--app-divider-color);
+  --background-activated: var(--ion-color-dark);
+  --background-activated-opacity: 0.04;
+}

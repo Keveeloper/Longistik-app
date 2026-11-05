@@ -22,6 +22,7 @@ import { useParams } from 'react-router-dom';
 import { apiErrorMessage } from '../../api/client';
 import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoAccion, AvisoSinConexion } from '../../components/Avisos';
+import { Dato, DetalleTitulo, Seccion } from '../../components/Detalle';
 import EntregaCard from '../../components/EntregaCard';
 import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
 import { TiemposEditor } from '../../components/TiemposRndc';
@@ -32,29 +33,51 @@ import { colaDeSesion, descartarCumplido, enviarCumplido } from '../../offline/c
 import { cumplidosService, type EstadoCumplido, type TiemposCumplido } from '../../services/cumplidos.service';
 import { operationsService, type RemesaDetalle as Detalle, type Tercero } from '../../services/operations.service';
 import { useCumplidosQueue } from '../../store/cumplidosQueue.store';
-import { ciudad, formatFecha, formatKg, formatPesos } from '../../utils/format';
+import { ciudad, formatFecha, formatKg, formatNumero, formatPesos, tipoOracion } from '../../utils/format';
 import { tiemposIniciales, validarTiempos } from '../../utils/tiempos';
-import { Dato, Seccion } from '../Manifiestos/ManifiestoDetalle';
 
 const TerceroBloque: React.FC<{ titulo: string; tercero: Tercero | null }> = ({ titulo, tercero }) => (
-  <div className="border-b border-divider py-3 last:border-b-0">
-    <p className="m-0 text-[13px] leading-[18px] text-muted">{titulo}</p>
+  <div>
+    <p className="m-0 text-[13px] leading-[18px] font-medium tracking-[0.06em] text-cielo uppercase">{titulo}</p>
     {tercero ? (
       <>
-        <p className="mt-1 mb-0 text-[15px] leading-5 font-medium text-tinta">{tercero.nombre || '—'}</p>
-        <p className="m-0 text-[14px] leading-5 text-tinta">
-          {[tercero.direccion, tercero.municipio?.nombre].filter(Boolean).join(' · ')}
+        <p className="mt-0.5 mb-0 text-[16px] leading-[22px] font-semibold text-white">{tipoOracion(tercero.nombre) || '—'}</p>
+        <p className="mt-0.5 mb-0 text-[14px] leading-5 text-white/85">
+          {[tipoOracion(tercero.direccion), ciudad(tercero.municipio)].filter(Boolean).join(' · ')}
         </p>
         {tercero.telefono && (
-          <a href={`tel:${tercero.telefono}`} className="mt-1 inline-flex items-center gap-1 text-[14px] leading-5 font-medium text-petroleo no-underline">
+          <a href={`tel:${tercero.telefono}`} className="mt-1 inline-flex items-center gap-1 text-[14px] leading-5 font-medium text-cielo no-underline">
             <IonIcon icon={icons.phone} aria-hidden="true" />
             {tercero.telefono}
           </a>
         )}
       </>
     ) : (
-      <p className="mt-1 mb-0 text-[14px] text-muted">—</p>
+      <p className="mt-0.5 mb-0 text-[15px] text-white/85">—</p>
     )}
+  </div>
+);
+
+/** Featured dark card: who sends and who receives, joined by the route line. */
+const RutaCard: React.FC<{ remitente: Tercero | null; destinatario: Tercero | null }> = ({ remitente, destinatario }) => (
+  <div className="flex gap-3.5 rounded-3xl bg-tinta p-5">
+    <div className="flex flex-col items-center pt-1 pb-1" aria-hidden="true">
+      <span className="h-3 w-3 shrink-0 rounded-full bg-cielo" />
+      <span className="my-1 w-0.5 flex-1 bg-white/25" />
+      <span className="h-3 w-3 shrink-0 rounded-[3px] bg-[#6cbf84]" />
+    </div>
+    <div className="flex min-w-0 flex-1 flex-col gap-5">
+      <TerceroBloque titulo="Remitente" tercero={remitente} />
+      <TerceroBloque titulo="Destinatario" tercero={destinatario} />
+    </div>
+  </div>
+);
+
+/** One of the key figures under the route (Mercancía, Peso, Cantidad). */
+const Cifra: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="min-w-0">
+    <p className="m-0 text-[14px] leading-5 text-muted">{label}</p>
+    <p className="mt-0.5 mb-0 truncate text-[22px] leading-7 font-semibold text-tinta">{children}</p>
   </div>
 );
 
@@ -195,41 +218,42 @@ const RemesaDetalle: React.FC = () => {
 
   return (
     <IonPage>
-      <AppHeader title={r?.numero ?? 'Remesa'} backHref="/remesas" />
+      <AppHeader backHref="/remesas" />
       <IonContent>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="px-4 pt-4 pb-8">
-          <AvisoSinConexion error={remesa.error} guardadoEn={remesa.guardadoEn} onRetry={reload} />
+        <div className="px-5 pt-1 pb-6">
+          {remesa.error && (
+            <div className="mb-4">
+              <AvisoSinConexion error={remesa.error} guardadoEn={remesa.guardadoEn} onRetry={reload} />
+            </div>
+          )}
 
           {!r && remesa.loading && (
             <div>
-              <IonSkeletonText animated style={{ width: '60%', height: 28 }} />
-              <IonSkeletonText animated style={{ width: '80%', height: 16, marginTop: 12 }} />
-              <IonSkeletonText animated style={{ width: '100%', height: 52, marginTop: 20, borderRadius: 12 }} />
+              <IonSkeletonText animated style={{ width: '40%', height: 16 }} />
+              <IonSkeletonText animated style={{ width: '80%', height: 32, marginTop: 10 }} />
+              <IonSkeletonText animated style={{ width: '100%', height: 56, marginTop: 20, borderRadius: 28 }} />
             </div>
           )}
 
           {r && (
             <>
-              <div className={`flex items-center justify-between gap-2 ${remesa.error ? 'mt-4' : ''}`}>
-                <p className="m-0 text-[22px] leading-7 font-semibold text-tinta">
-                  {ciudad(r.origen) || 'Sin origen'} → {ciudad(r.destino) || 'Sin destino'}
-                </p>
-                <EstadoBadge estado={r.estado} />
-              </div>
-              <p className="mt-1 mb-0 text-[14px] leading-5 text-muted">
-                {[r.cliente?.nombre, formatFecha(r.fecha)].filter(Boolean).join(' · ')}
-              </p>
+              <DetalleTitulo
+                eyebrow={`Remesa ${r.numero}`}
+                title={`${ciudad(r.origen) || 'Sin origen'} → ${ciudad(r.destino) || 'Sin destino'}`}
+                badge={<EstadoBadge estado={r.estado} />}
+                meta={[tipoOracion(r.cliente?.nombre), formatFecha(r.fecha)].filter(Boolean).join(' · ')}
+              />
 
               {/* Delivery saved on the phone, waiting for signal */}
               {enCola && (
                 <Aviso
                   tono={enCola.estado === 'rechazado' ? 'error' : 'warning'}
                   icon={enCola.estado === 'rechazado' ? icons.alertCircle : icons.cloudUpload}
-                  className="mt-4"
+                  className="mt-5"
                   action={
                     enCola.estado === 'rechazado' ? (
                       <AvisoAccion onClick={() => descartarCumplido(enCola.id)} className="text-error-rndc">
@@ -253,31 +277,25 @@ const RemesaDetalle: React.FC = () => {
                 </Aviso>
               )}
 
-              {!enCola && c?.puedeCumplir && (
-                <IonButton
-                  expand="block"
-                  className="mt-4 h-[52px] normal-case tracking-normal"
-                  onClick={() => router.push(`/remesas/${remesaId}/cumplir`)}
-                >
+              {((!enCola && c?.puedeCumplir) ||
+                // Offline and never loaded: the delivery can still be registered
+                (!enCola && !c && cumplido.error && r.estado !== 'cumplido' && r.estado !== 'inactivo')) && (
+                <IonButton expand="block" className="mt-5 mb-0 h-14 text-[17px]" onClick={() => router.push(`/remesas/${remesaId}/cumplir`)}>
                   <IonIcon slot="start" icon={icons.camera} />
                   Cumplir remesa
                 </IonButton>
               )}
 
-              {/* Offline and never loaded: the delivery can still be registered */}
-              {!enCola && !c && cumplido.error && r.estado !== 'cumplido' && r.estado !== 'inactivo' && (
-                <IonButton
-                  expand="block"
-                  className="mt-4 h-[52px] normal-case tracking-normal"
-                  onClick={() => router.push(`/remesas/${remesaId}/cumplir`)}
-                >
-                  <IonIcon slot="start" icon={icons.camera} />
-                  Cumplir remesa
-                </IonButton>
+              {!!c?.entregas.length && (
+                <div className="mt-5 flex flex-col gap-3">
+                  {c.entregas.map((e) => (
+                    <EntregaCard key={e.id} entrega={e} pesoKg={r.pesoKg} />
+                  ))}
+                </div>
               )}
 
               {c?.cumplido.estadoRndc === 'reportado' && (
-                <Aviso tono="success" className="mt-4">
+                <Aviso tono="success" className="mt-3">
                   Cumplida en el RNDC
                 </Aviso>
               )}
@@ -285,71 +303,73 @@ const RemesaDetalle: React.FC = () => {
                 <ReintentoRndc remesaId={remesaId} mensaje={ultimaEntrega?.rndc.mensaje ?? c.cumplido.rndcError} onDone={reload} />
               )}
               {c?.municipal && !!c.entregas.length && c.cumplido.estadoRndc !== 'reportado' && (
-                <Aviso className="mt-4">Remesa municipal: el RNDC la cumple con el cumplido del manifiesto.</Aviso>
+                <Aviso className="mt-3">Remesa municipal: el RNDC la cumple junto con el cumplido del manifiesto.</Aviso>
               )}
               {c && !c.puedeCumplir && !c.entregas.length && c.cumplido.estadoRndc !== 'reportado' && c.motivoNoDisponible && (
-                <p className="mt-4 mb-0 text-[14px] leading-5 text-muted">{c.motivoNoDisponible}</p>
-              )}
-
-              {!!c?.entregas.length && (
-                <Seccion title="Entrega">
-                  <div className="flex flex-col gap-3">
-                    {c.entregas.map((e) => (
-                      <EntregaCard key={e.id} entrega={e} />
-                    ))}
-                  </div>
-                </Seccion>
+                <p className="mt-4 mb-0 text-[15px] leading-[22px] text-muted">{c.motivoNoDisponible}</p>
               )}
 
               {r.estadoRndc === 'error' && r.rndcError && (
-                <Aviso tono="error" className="mt-4">
+                <Aviso tono="error" className="mt-3">
                   <span className="font-medium">Remesa rechazada por el RNDC:</span> {r.rndcError}
                 </Aviso>
               )}
 
-              <Seccion title="Datos">
-                <Dato label="RNDC">
-                  <RndcEstado estado={r.estadoRndc} />
-                </Dato>
-                {r.consecutivoRndc && <Dato label="Consecutivo RNDC">{r.consecutivoRndc}</Dato>}
-                {r.manifiestoId && (
-                  <Dato label="Manifiesto">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/manifiestos/${r.manifiestoId}`)}
-                      className="cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium text-petroleo"
-                    >
-                      Ver manifiesto
-                    </button>
-                  </Dato>
-                )}
-                <Dato label="Peso">{formatKg(r.pesoKg)}</Dato>
-                <Dato label="Cantidad">{r.cantidad}</Dato>
-              </Seccion>
+              <div className="mt-5">
+                <RutaCard remitente={r.remitente} destinatario={r.destinatario} />
+              </div>
 
-              <Seccion title="Remitente y destinatario">
-                <TerceroBloque titulo="Remitente" tercero={r.remitente} />
-                <TerceroBloque titulo="Destinatario" tercero={r.destinatario} />
-              </Seccion>
-
-              {r.detalles.length > 0 && (
-                <Seccion title="Mercancía">
-                  {r.detalles.map((d, i) => (
-                    <Dato key={i} label={d.producto ?? 'Producto'}>
-                      {formatKg(d.pesoKg)} · {d.cantidad} u · {formatPesos(d.valorDeclarado)}
-                    </Dato>
-                  ))}
-                </Seccion>
-              )}
-
-              {r.observaciones && (
-                <Seccion title="Observaciones">
-                  <p className="m-0 text-[14px] leading-5 text-tinta">{r.observaciones}</p>
-                </Seccion>
-              )}
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                <Cifra label="Mercancía">{r.producto ?? '—'}</Cifra>
+                <Cifra label="Peso">{formatKg(r.pesoKg)}</Cifra>
+                <Cifra label="Cantidad">{formatNumero(r.cantidad)} u</Cifra>
+              </div>
             </>
           )}
         </div>
+
+        {r && (
+          <div className="pb-8">
+            <Seccion title="Datos">
+              <Dato label="RNDC">
+                <RndcEstado estado={r.estadoRndc} variante="dato" />
+              </Dato>
+              {r.consecutivoRndc && <Dato label="Consecutivo RNDC">{r.consecutivoRndc}</Dato>}
+              {r.detalles.length > 0 && (
+                <Dato label="Valor declarado">{formatPesos(r.detalles.reduce((total, d) => total + d.valorDeclarado, 0))}</Dato>
+              )}
+              {r.manifiestoId && (
+                <Dato label="Manifiesto">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/manifiestos/${r.manifiestoId}`)}
+                    className="inline-flex cursor-pointer items-center gap-1 border-0 bg-transparent p-0 text-[15px] leading-[22px] font-semibold text-petroleo"
+                  >
+                    Ver manifiesto
+                    <IonIcon icon={icons.chevronRight} className="text-[18px]" aria-hidden="true" />
+                  </button>
+                </Dato>
+              )}
+            </Seccion>
+
+            {/* Several products: each one with its figures */}
+            {r.detalles.length > 1 && (
+              <Seccion title="Mercancía" count={r.detalles.length}>
+                {r.detalles.map((d, i) => (
+                  <Dato key={i} label={d.producto ?? 'Producto'}>
+                    {formatKg(d.pesoKg)} · {d.cantidad} u · {formatPesos(d.valorDeclarado)}
+                  </Dato>
+                ))}
+              </Seccion>
+            )}
+
+            {r.observaciones && (
+              <Seccion title="Observaciones">
+                <p className="mt-2 mb-0 text-[15px] leading-[22px] text-tinta">{r.observaciones}</p>
+              </Seccion>
+            )}
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );

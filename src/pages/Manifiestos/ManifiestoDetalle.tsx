@@ -5,7 +5,6 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
-  IonRippleEffect,
   IonSkeletonText,
   IonSpinner,
   useIonRouter,
@@ -18,6 +17,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import { apiErrorMessage } from '../../api/client';
 import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoAccion, AvisoSinConexion } from '../../components/Avisos';
+import { Dato, DetalleTitulo, FilaLista, Seccion } from '../../components/Detalle';
 import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
 import SeguimientoViaje from '../../components/SeguimientoViaje';
 import { SobreanticipoFila, SolicitarSobreanticipoModal } from '../../components/Sobreanticipos';
@@ -30,21 +30,8 @@ import { sobreanticiposService, type ResultadoSobreanticipo, type Sobreanticipos
 import { seguimientoService, type EstadoSeguimiento } from '../../services/seguimiento.service';
 import { useAuthStore } from '../../store/auth.store';
 import { useDocumentosStore } from '../../store/documentos.store';
-import { ciudad, formatFecha, formatFechaHora, formatKg, formatPesos } from '../../utils/format';
-
-export const Dato: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className="flex justify-between gap-4 border-b border-divider py-3 last:border-b-0">
-    <span className="shrink-0 text-[14px] leading-5 text-muted">{label}</span>
-    <span className="min-w-0 text-right text-[14px] leading-5 text-tinta">{children}</span>
-  </div>
-);
-
-export const Seccion: React.FC<{ title: string; children: React.ReactNode; className?: string }> = ({ title, children, className = '' }) => (
-  <section className={`mt-6 ${className}`}>
-    <h2 className="m-0 mb-2 text-[18px] leading-6 font-medium text-tinta">{title}</h2>
-    {children}
-  </section>
-);
+import { ciudad, formatFecha, formatFechaHora, formatKg, formatPesos, lugar, tipoOracion } from '../../utils/format';
+import './ManifiestoDetalle.css';
 
 /** Document card: open the PDF, is it valid on the road, is it saved on the phone. */
 const DocumentoCard: React.FC<{ manifiestoId: number; placa: string | null }> = ({ manifiestoId, placa }) => {
@@ -68,39 +55,45 @@ const DocumentoCard: React.FC<{ manifiestoId: number; placa: string | null }> = 
   };
 
   return (
-    <div className="rounded-2xl bg-superficie p-4">
+    <div className="rounded-3xl bg-tinta p-5 text-white">
       <div className="flex items-start gap-3">
-        <IonIcon icon={icons.fileText} className="mt-[2px] shrink-0 text-[26px] text-tinta" aria-hidden="true" />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">
+          <IonIcon
+            icon={doc && !doc.valido ? icons.alertTriangle : icons.shieldCheck}
+            className={`text-[22px] ${doc && !doc.valido ? 'text-rndc-pendiente' : 'text-cielo'}`}
+            aria-hidden="true"
+          />
+        </span>
         <div className="min-w-0 flex-1">
-          <p className="m-0 text-[15px] leading-5 font-medium text-tinta">Documento del manifiesto</p>
+          <p className="m-0 text-[17px] leading-[22px] font-semibold">
+            {doc?.valido ? 'Documento listo para mostrar en vía' : 'Documento del manifiesto'}
+          </p>
           {doc ? (
             <>
-              <p className={`mt-1 mb-0 text-[13px] leading-[18px] ${doc.valido ? 'text-cumplido' : 'text-en-ruta'}`}>
-                {doc.valido ? 'Válido para mostrar en vía' : doc.motivoNoValido}
-              </p>
-              <p className="mt-1 mb-0 flex items-center gap-1 text-[13px] leading-[18px] text-muted">
-                <IonIcon icon={icons.deviceMobile} className="text-[15px]" aria-hidden="true" />
+              {!doc.valido && <p className="mt-1 mb-0 text-[14px] leading-5">{doc.motivoNoValido}</p>}
+              <p className="mt-1 mb-0 text-[13px] leading-[18px] text-white/75">
                 Guardado en el teléfono · {formatFechaHora(doc.descargadoEn)}
               </p>
             </>
           ) : (
-            <p className="mt-1 mb-0 text-[13px] leading-[18px] text-muted">
+            <p className="mt-1 mb-0 text-[13px] leading-[18px] text-white/75">
               Guárdalo para mostrarlo en un retén aunque no tengas señal.
             </p>
           )}
         </div>
       </div>
-      <div className="mt-3 flex gap-2">
-        <IonButton
-          className="flex-1 normal-case tracking-normal"
-          onClick={() => router.push(`/manifiestos/${manifiestoId}/documento`)}
-        >
+      <div className="mt-4 flex gap-3">
+        <IonButton className="doc-ver m-0 h-[46px] flex-1" onClick={() => router.push(`/manifiestos/${manifiestoId}/documento`)}>
           <IonIcon slot="start" icon={icons.eye} />
           Ver manifiesto
         </IonButton>
-        <IonButton fill="outline" color="dark" className="normal-case tracking-normal" disabled={descargando} onClick={guardar}>
-          {descargando ? <IonSpinner name="crescent" /> : <IonIcon slot="start" icon={doc ? icons.refresh : icons.download} />}
-          {doc ? 'Actualizar' : 'Guardar'}
+        <IonButton
+          className="doc-actualizar m-0 h-[46px] w-[46px]"
+          aria-label={doc ? 'Actualizar' : 'Guardar en el teléfono'}
+          disabled={descargando}
+          onClick={guardar}
+        >
+          {descargando ? <IonSpinner name="crescent" /> : <IonIcon slot="icon-only" icon={doc ? icons.refresh : icons.download} />}
         </IonButton>
       </div>
     </div>
@@ -110,23 +103,15 @@ const DocumentoCard: React.FC<{ manifiestoId: number; placa: string | null }> = 
 const RemesaFila: React.FC<{ remesa: Remesa }> = ({ remesa: r }) => {
   const router = useIonRouter();
   return (
-    <button
-      type="button"
-      onClick={() => router.push(`/remesas/${r.id}`)}
-      className="ion-activatable relative flex w-full cursor-pointer items-center gap-3 overflow-hidden border-0 border-b border-solid border-divider bg-transparent px-0 py-3 text-left last:border-b-0"
-    >
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="text-[15px] leading-5 font-semibold text-tinta">{r.numero}</span>
-          <EstadoBadge estado={r.estado} />
-        </div>
-        <p className="mt-1 mb-0 truncate text-[13px] leading-[18px] text-muted">
-          {[r.cliente?.nombre, `${ciudad(r.origen)} → ${ciudad(r.destino)}`, formatKg(r.pesoKg)].filter(Boolean).join(' · ')}
-        </p>
+    <FilaLista icon={icons.fileDescription} chevron onClick={() => router.push(`/remesas/${r.id}`)} className="py-3 last:border-b-0">
+      <div className="flex items-center gap-2">
+        <span className="text-[16px] leading-[22px] font-semibold text-tinta">{r.numero}</span>
+        <EstadoBadge estado={r.estado} />
       </div>
-      <IonIcon icon={icons.chevronRight} className="shrink-0 text-[20px] text-muted" />
-      <IonRippleEffect />
-    </button>
+      <p className="mt-0.5 mb-0 truncate text-[14px] leading-5 text-muted">
+        {[tipoOracion(r.cliente?.nombre), `${ciudad(r.origen)} → ${ciudad(r.destino)}`, formatKg(r.pesoKg)].filter(Boolean).join(' · ')}
+      </p>
+    </FilaLista>
   );
 };
 
@@ -153,40 +138,46 @@ const SobreanticiposSeccion: React.FC<{
   };
 
   return (
-    <Seccion title={data?.items.length ? `Sobreanticipos (${data.items.length})` : 'Sobreanticipos'}>
+    <Seccion
+      title="Sobreanticipos"
+      count={data?.items.length || undefined}
+      end={data?.puedeSolicitar ? `Disponible ${formatPesos(data.disponible)}` : undefined}
+    >
       <div id="sobreanticipos" />
-      {!data && loading && <IonSkeletonText animated style={{ width: '100%', height: 64, borderRadius: 16 }} />}
+      {!data && loading && <IonSkeletonText animated style={{ width: '100%', height: 64, borderRadius: 16, marginTop: 12 }} />}
       {!data && !loading && error && (
-        <Aviso tono="error" action={<AvisoAccion onClick={onRecargar} className="text-error-rndc">Reintentar</AvisoAccion>}>
+        <Aviso
+          tono="error"
+          className="mt-3"
+          action={<AvisoAccion onClick={onRecargar} className="text-error-rndc">Reintentar</AvisoAccion>}
+        >
           {error}
         </Aviso>
       )}
       {data && (
         <>
           {alertaTope && (
-            <Aviso tono="warning" className="mb-3">
+            <Aviso tono="warning" className="mt-3">
               {alertaTope}
             </Aviso>
           )}
           {data.items.length === 0 ? (
-            <p className="m-0 text-[14px] text-muted">No hay solicitudes</p>
+            <p className="mt-2 mb-0 text-[15px] leading-[22px] text-muted">No hay solicitudes</p>
           ) : (
             data.items.map((s) => <SobreanticipoFila key={s.id} item={s} />)
           )}
           <IonButton
             expand="block"
-            fill="outline"
-            color="dark"
-            className="mt-3 normal-case tracking-normal"
+            className="btn-secundario mt-4 mb-0 h-[52px] text-[16px]"
             disabled={!data.puedeSolicitar}
             onClick={() => setAbierto(true)}
           >
             <IonIcon slot="start" icon={icons.plus} />
             Solicitar sobreanticipo
           </IonButton>
-          <p className="mt-2 mb-0 text-caption text-muted">
-            {data.puedeSolicitar ? `Disponible: ${formatPesos(data.disponible)}` : data.motivoNoDisponible}
-          </p>
+          {!data.puedeSolicitar && data.motivoNoDisponible && (
+            <p className="mt-2 mb-0 text-center text-caption text-muted">{data.motivoNoDisponible}</p>
+          )}
           <SolicitarSobreanticipoModal
             isOpen={abierto}
             manifiestoId={manifiestoId}
@@ -252,43 +243,40 @@ const ManifiestoDetalle: React.FC = () => {
 
   return (
     <IonPage>
-      <AppHeader title={m?.numero ?? 'Manifiesto'} backHref="/manifiestos" />
+      <AppHeader backHref="/manifiestos" />
       <IonContent ref={contentRef}>
         <IonRefresher slot="fixed" onIonRefresh={handleRefresh}>
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="px-4 pt-4 pb-8">
-          <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+        <div className="px-5 pt-1 pb-6">
+          {error && (
+            <div className="mb-4">
+              <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+            </div>
+          )}
 
           {!m && loading && (
-            <div className="mt-2">
-              <IonSkeletonText animated style={{ width: '50%', height: 28 }} />
-              <IonSkeletonText animated style={{ width: '80%', height: 16, marginTop: 12 }} />
-              <IonSkeletonText animated style={{ width: '100%', height: 120, marginTop: 20, borderRadius: 16 }} />
+            <div>
+              <IonSkeletonText animated style={{ width: '40%', height: 16 }} />
+              <IonSkeletonText animated style={{ width: '80%', height: 32, marginTop: 10 }} />
+              <IonSkeletonText animated style={{ width: '100%', height: 160, marginTop: 20, borderRadius: 24 }} />
             </div>
           )}
 
           {/* Even without the details, a saved PDF can be opened */}
-          {!m && !loading && documentoGuardado(manifiestoId) && (
-            <div className="mt-4">
-              <DocumentoCard manifiestoId={manifiestoId} placa={null} />
-            </div>
-          )}
+          {!m && !loading && documentoGuardado(manifiestoId) && <DocumentoCard manifiestoId={manifiestoId} placa={null} />}
 
           {m && (
             <>
-              <div className={`flex items-center justify-between gap-2 ${error ? 'mt-4' : ''}`}>
-                <p className="m-0 text-[22px] leading-7 font-semibold text-tinta">
-                  {ciudad(m.origen) || 'Sin origen'} → {ciudad(m.destino) || 'Sin destino'}
-                </p>
-                <EstadoBadge estado={m.estado} />
-              </div>
-              <p className="mt-1 mb-0 text-[14px] leading-5 text-muted">
-                {[m.placa, formatFecha(m.fechaExpedicion)].filter(Boolean).join(' · ')}
-              </p>
+              <DetalleTitulo
+                eyebrow={`Manifiesto ${m.numero}`}
+                title={`${ciudad(m.origen) || 'Sin origen'} → ${ciudad(m.destino) || 'Sin destino'}`}
+                badge={<EstadoBadge estado={m.estado} />}
+                meta={[m.placa, formatFecha(m.fechaExpedicion)].filter(Boolean).join(' · ')}
+              />
 
-              <div className="mt-4">
+              <div className="mt-5">
                 <DocumentoCard manifiestoId={m.id} placa={m.placa} />
               </div>
 
@@ -309,39 +297,47 @@ const ManifiestoDetalle: React.FC = () => {
                   <span className="font-medium">Rechazado por el RNDC:</span> {m.rndcError}
                 </Aviso>
               )}
-
-              <Seccion title="Datos">
-                <Dato label="Conductor">{m.conductor?.nombre ?? '—'}</Dato>
-                <Dato label="Placa">{m.placa ?? '—'}</Dato>
-                <Dato label="RNDC">
-                  <RndcEstado estado={m.estadoRndc} />
-                </Dato>
-                {m.consecutivoRndc && <Dato label="Consecutivo RNDC">{m.consecutivoRndc}</Dato>}
-                <Dato label="Origen">{m.origen?.nombre ?? '—'}</Dato>
-                <Dato label="Destino">{m.destino?.nombre ?? '—'}</Dato>
-                <Dato label="Flete">{formatPesos(m.valorFlete)}</Dato>
-              </Seccion>
-
-              <Seccion title={`Remesas (${m.remesas.length})`}>
-                {m.remesas.length === 0 ? (
-                  <p className="m-0 text-[14px] text-muted">Sin remesas</p>
-                ) : (
-                  m.remesas.map((r) => <RemesaFila key={r.id} remesa={r} />)
-                )}
-              </Seccion>
-
-              {puedeSobreanticipos && (
-                <SobreanticiposSeccion
-                  manifiestoId={m.id}
-                  data={sobre.data}
-                  error={sobre.error}
-                  loading={sobre.loading}
-                  onRecargar={loadSobre}
-                />
-              )}
             </>
           )}
         </div>
+
+        {m && (
+          <div className="pb-8">
+            <Seccion title="Datos">
+              <Dato label="Conductor">{tipoOracion(m.conductor?.nombre) || '—'}</Dato>
+              <Dato label="Placa">{m.placa ?? '—'}</Dato>
+              <Dato label="RNDC">
+                <RndcEstado estado={m.estadoRndc} variante="dato" />
+              </Dato>
+              {m.consecutivoRndc && <Dato label="Consecutivo RNDC">{m.consecutivoRndc}</Dato>}
+              <Dato label="Origen">{lugar(m.origen) || '—'}</Dato>
+              <Dato label="Destino">{lugar(m.destino) || '—'}</Dato>
+              <Dato label="Flete">{formatPesos(m.valorFlete)}</Dato>
+            </Seccion>
+
+            <Seccion title="Remesas" count={m.remesas.length}>
+              {m.remesas.length === 0 ? (
+                <p className="mt-2 mb-0 text-[15px] leading-[22px] text-muted">Sin remesas</p>
+              ) : (
+                <div className="mt-1">
+                  {m.remesas.map((r) => (
+                    <RemesaFila key={r.id} remesa={r} />
+                  ))}
+                </div>
+              )}
+            </Seccion>
+
+            {puedeSobreanticipos && (
+              <SobreanticiposSeccion
+                manifiestoId={m.id}
+                data={sobre.data}
+                error={sobre.error}
+                loading={sobre.loading}
+                onRecargar={loadSobre}
+              />
+            )}
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );

@@ -1,0 +1,29 @@
+.app-search {
+  --background: var(--ion-color-light);
+  --border-radius: 9999px;
+  --box-shadow: none;
+  --color: var(--ion-color-dark);
+  --placeholder-color: var(--ion-color-medium);
+  --placeholder-opacity: 1;
+  --icon-color: var(--ion-color-medium);
+  height: 48px;
+  padding: 0;
+}
+
+/* Higher specificity than Ionic's scoped searchbar styles, which load later */
+ion-searchbar.app-search .searchbar-input-container {
+  height: 48px;
+}
+
+ion-searchbar.app-search .searchbar-input {
+  height: 48px;
+  padding-inline-start: 49px;
+  font-size: 15px;
+}
+
+ion-searchbar.app-search .searchbar-search-icon {
+  top: 15px;
+  inset-inline-start: 17px;
+  width: 18px;
+  height: 18px;
+}

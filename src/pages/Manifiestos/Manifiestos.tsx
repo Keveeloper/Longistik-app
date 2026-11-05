@@ -6,7 +6,6 @@ import {
   IonPage,
   IonRefresher,
   IonRefresherContent,
-  IonRippleEffect,
   IonSearchbar,
   IonSegment,
   IonSegmentButton,
@@ -18,13 +17,14 @@ import {
 import { useEffect, useState } from 'react';
 import AppHeader from '../../components/AppHeader';
 import { AvisoSinConexion } from '../../components/Avisos';
+import { FilaLista } from '../../components/Detalle';
 import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
 import { usePagedList } from '../../hooks/usePagedList';
 import { icons } from '../../icons';
 import { operationsService, type EstadoManifiesto, type Manifiesto } from '../../services/operations.service';
 import { useCompanyStore } from '../../store/company.store';
 import { documentoKey, useDocumentosStore } from '../../store/documentos.store';
-import { ciudad, formatFecha, plural } from '../../utils/format';
+import { ciudad, formatFecha, plural, tipoOracion } from '../../utils/format';
 
 type Filtro = EstadoManifiesto | 'todos';
 
@@ -34,45 +34,49 @@ const filtros: { value: Filtro; label: string }[] = [
   { value: 'todos', label: 'Todos' },
 ];
 
+/** Placeholder rows while a list loads, shaped like the real ones. */
 export const ListSkeleton: React.FC = () => (
-  <div className="flex flex-col gap-3">
+  <div>
     {[0, 1, 2].map((i) => (
-      <div key={i} className="rounded-2xl border border-divider p-4">
-        <IonSkeletonText animated style={{ width: '40%', height: 18 }} />
-        <IonSkeletonText animated style={{ width: '70%', height: 14, marginTop: 10 }} />
-        <IonSkeletonText animated style={{ width: '55%', height: 14, marginTop: 6 }} />
+      <div key={i} className="flex items-center gap-3.5 border-0 border-b border-solid border-divider px-5 py-3">
+        <IonSkeletonText animated className="m-0 h-11 w-11 shrink-0 rounded-full" />
+        <div className="flex-1">
+          <IonSkeletonText animated style={{ width: '40%', height: 18 }} />
+          <IonSkeletonText animated style={{ width: '70%', height: 14, marginTop: 10 }} />
+          <IonSkeletonText animated style={{ width: '55%', height: 14, marginTop: 6 }} />
+        </div>
       </div>
     ))}
   </div>
 );
 
-const ManifiestoCard: React.FC<{ manifiesto: Manifiesto; guardado: boolean }> = ({ manifiesto: m, guardado }) => {
+/** Number and state chip, the first line of every list row. */
+export const FilaCabecera: React.FC<{ numero: string; badge: React.ReactNode }> = ({ numero, badge }) => (
+  <div className="flex items-center justify-between gap-2">
+    <span className="text-[17px] leading-6 font-semibold text-tinta">{numero}</span>
+    {badge}
+  </div>
+);
+
+const ManifiestoFila: React.FC<{ manifiesto: Manifiesto; guardado: boolean }> = ({ manifiesto: m, guardado }) => {
   const router = useIonRouter();
   return (
-    <button
-      type="button"
-      onClick={() => router.push(`/manifiestos/${m.id}`)}
-      className="ion-activatable relative block w-full cursor-pointer overflow-hidden rounded-2xl border border-divider bg-white p-4 text-left"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[17px] leading-6 font-semibold text-tinta">{m.numero}</span>
-        <EstadoBadge estado={m.estado} />
-      </div>
-      <p className="mt-1 mb-0 text-[14px] leading-5 text-tinta">
+    <FilaLista icon={icons.truck} onClick={() => router.push(`/manifiestos/${m.id}`)}>
+      <FilaCabecera numero={m.numero} badge={<EstadoBadge estado={m.estado} />} />
+      <p className="mt-0.5 mb-0 truncate text-[16px] leading-[22px] text-tinta">
         {ciudad(m.origen) || 'Sin origen'} → {ciudad(m.destino) || 'Sin destino'}
       </p>
-      <p className="mt-1 mb-0 text-[13px] leading-[18px] text-muted">
-        {[m.placa, m.conductor?.nombre, formatFecha(m.fechaExpedicion)].filter(Boolean).join(' · ')}
+      <p className="m-0 truncate text-[14px] leading-5 text-muted">
+        {[m.placa, tipoOracion(m.conductor?.nombre), formatFecha(m.fechaExpedicion)].filter(Boolean).join(' · ')}
       </p>
-      <div className="mt-2 flex items-center justify-between">
+      <p className="m-0 flex items-center gap-1 text-[14px] leading-5 text-muted">
         <RndcEstado estado={m.estadoRndc} />
-        <span className="flex items-center gap-2 text-caption text-muted">
-          {guardado && <IonIcon icon={icons.deviceMobile} aria-label="Guardado en el teléfono" className="text-[16px] text-verde" />}
-          {plural(m.remesas, 'remesa', 'remesas')}
-        </span>
-      </div>
-      <IonRippleEffect />
-    </button>
+        <span>· {plural(m.remesas, 'remesa', 'remesas')}</span>
+        {guardado && (
+          <IonIcon icon={icons.deviceMobile} aria-label="Guardado en el teléfono" className="ml-1 text-[16px] text-verde" />
+        )}
+      </p>
+    </FilaLista>
   );
 };
 
@@ -126,8 +130,12 @@ const Manifiestos: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <div className="flex flex-col gap-3 px-4 pt-4 pb-6">
-          <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+        <div className="pb-6">
+          {error && (
+            <div className="px-5 pb-3">
+              <AvisoSinConexion error={error} guardadoEn={guardadoEn} onRetry={reload} />
+            </div>
+          )}
 
           {items === null ? (
             <ListSkeleton />
@@ -139,9 +147,9 @@ const Manifiestos: React.FC = () => {
             )
           ) : (
             <>
-              {!guardadoEn && <p className="m-0 text-caption text-muted">{plural(total, 'manifiesto', 'manifiestos')}</p>}
+              {!guardadoEn && <p className="m-0 px-5 text-[14px] leading-5 text-muted">{plural(total, 'manifiesto', 'manifiestos')}</p>}
               {items.map((m) => (
-                <ManifiestoCard key={m.id} manifiesto={m} guardado={!!documentos[documentoKey(companyCode, m.id)]} />
+                <ManifiestoFila key={m.id} manifiesto={m} guardado={!!documentos[documentoKey(companyCode, m.id)]} />
               ))}
             </>
           )}

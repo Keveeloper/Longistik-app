@@ -6,12 +6,10 @@ import {
   IonHeader,
   IonIcon,
   IonInput,
-  IonItem,
   IonModal,
   IonSkeletonText,
   IonSpinner,
   IonTextarea,
-  IonTitle,
   IonToolbar,
   useIonRouter,
   useIonToast,
@@ -29,8 +27,8 @@ import {
 } from '../services/sobreanticipos.service';
 import { formatFechaHora, formatNumero, formatPesos } from '../utils/format';
 import { Aviso, AvisoAccion } from './Avisos';
+import { IconoCirculo } from './Detalle';
 import { SobreanticipoBadge } from './EstadoBadge';
-import './Sobreanticipos.css';
 
 /** One request: value (and approved value when different), reason, state, date and notes. */
 export const SobreanticipoFila: React.FC<{
@@ -42,27 +40,29 @@ export const SobreanticipoFila: React.FC<{
 }> = ({ item: s, conManifiesto, children }) => {
   const aprobadoDistinto = s.valorAprobado !== null && s.valorAprobado !== s.valor;
   return (
-    <div className="border-0 border-b border-solid border-divider py-3 last:border-b-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="m-0 text-[17px] leading-6 font-semibold text-tinta">{formatPesos(s.valor)}</p>
-          <p className="mt-[2px] mb-0 text-[14px] leading-5 text-tinta">
-            {[conManifiesto && s.manifiesto, conManifiesto && s.placa, s.motivoNombre ?? s.motivo].filter(Boolean).join(' · ')}
-          </p>
+    <div className="flex items-start gap-3.5 border-0 border-b border-solid border-divider py-3 last:border-b-0">
+      <IconoCirculo icon={icons.cash} className="mt-1 h-11 w-11" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <p className="m-0 text-[19px] leading-[26px] font-semibold text-tinta">{formatPesos(s.valor)}</p>
+          <SobreanticipoBadge estado={s.estado} />
         </div>
-        <SobreanticipoBadge estado={s.estado} />
+        <p className="mt-0.5 mb-0 text-[15px] leading-[21px] break-words text-tinta">
+          {[conManifiesto && s.manifiesto, conManifiesto && s.placa, s.motivoNombre ?? s.motivo, s.descripcion]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+        <p className="mt-0.5 mb-0 text-[14px] leading-5 text-muted">
+          Solicitado {formatFechaHora(s.fechaSolicitud)}
+          {aprobadoDistinto && ` · Aprobado por ${formatPesos(s.valorAprobado!)}`}
+          {s.fechaDecision && ` · Decidido ${formatFechaHora(s.fechaDecision)}`}
+        </p>
+        {s.notas && <p className="mt-1 mb-0 text-[14px] leading-5 break-words text-tinta">Notas: {s.notas}</p>}
+        {s.alertaTope && s.estado === 'solicitada' && (
+          <p className="mt-1 mb-0 text-[14px] leading-5 text-en-ruta">{s.alertaTope}</p>
+        )}
+        {children}
       </div>
-      {s.descripcion && <p className="mt-1 mb-0 text-[13px] leading-[18px] break-words text-muted">{s.descripcion}</p>}
-      <p className="mt-1 mb-0 text-caption text-muted">
-        Solicitado {formatFechaHora(s.fechaSolicitud)}
-        {aprobadoDistinto && ` · Aprobado por ${formatPesos(s.valorAprobado!)}`}
-        {s.fechaDecision && ` · Decidido ${formatFechaHora(s.fechaDecision)}`}
-      </p>
-      {s.notas && <p className="mt-1 mb-0 text-[13px] leading-[18px] break-words text-tinta">Notas: {s.notas}</p>}
-      {s.alertaTope && s.estado === 'solicitada' && (
-        <p className="mt-1 mb-0 text-[13px] leading-[18px] text-en-ruta">{s.alertaTope}</p>
-      )}
-      {children}
     </div>
   );
 };
@@ -165,8 +165,7 @@ const Formulario: React.FC<{
     <>
       <IonHeader>
         <IonToolbar className="app-toolbar">
-          <IonTitle>Solicitar sobreanticipo</IonTitle>
-          <IonButtons slot="end">
+          <IonButtons slot="start">
             <IonButton aria-label="Cerrar" onClick={onCerrar}>
               <IonIcon slot="icon-only" icon={icons.x} />
             </IonButton>
@@ -174,41 +173,41 @@ const Formulario: React.FC<{
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <div className="flex flex-col gap-5 px-4 pt-4 pb-8">
-          <p className="m-0 text-[14px] leading-5 text-muted">
-            Se le entrega al titular del manifiesto. Queda pendiente hasta que un aprobador de la empresa la revise.
-          </p>
-
+        <div className="flex flex-col gap-6 px-5 pt-1 pb-8">
           <div>
-            <div className={`rounded-2xl border ${errores.valor ? 'border-error-rndc' : 'border-divider'}`}>
-              <IonItem lines="none" className="sobreanticipo-item">
-                <IonInput
-                  label="Valor"
-                  labelPlacement="stacked"
-                  inputmode="numeric"
-                  placeholder="0"
-                  value={valor ? formatNumero(pesos) : ''}
-                  onIonInput={(e) => {
-                    const digits = (e.detail.value ?? '').replace(/\D/g, '').replace(/^0+/, '').slice(0, 12);
-                    setValor(digits);
-                    // Ionic keeps the raw text when the value doesn't change: write the formatted one back
-                    e.target.value = digits ? formatNumero(Number(digits)) : '';
-                    setErrores((x) => ({ ...x, valor: undefined }));
-                  }}
-                >
-                  <span slot="start" className="text-tinta">
-                    $
-                  </span>
-                </IonInput>
-              </IonItem>
-            </div>
-            <p className={`mt-1 mb-0 text-caption ${errores.valor ? 'text-error-rndc' : 'text-muted'}`}>
-              {errores.valor ? `${errores.valor} · ` : ''}Disponible: {formatPesos(disponible)}
+            <h1 className="m-0 text-[34px] leading-9 tracking-[-0.5px] text-tinta">Solicitar sobreanticipo</h1>
+            <p className="mt-2 mb-0 text-[15px] leading-[22px] text-muted">
+              Se le entrega al titular del manifiesto. Queda pendiente hasta que un aprobador de la empresa la revise.
             </p>
           </div>
 
+          <label className="block">
+            <span className="app-field-label">Valor</span>
+            <IonInput
+              className={`app-field ${errores.valor ? 'ion-invalid ion-touched' : ''}`}
+              aria-label="Valor"
+              inputmode="numeric"
+              placeholder="0"
+              value={valor ? formatNumero(pesos) : ''}
+              onIonInput={(e) => {
+                const digits = (e.detail.value ?? '').replace(/\D/g, '').replace(/^0+/, '').slice(0, 12);
+                setValor(digits);
+                // Ionic keeps the raw text when the value doesn't change: write the formatted one back
+                e.target.value = digits ? formatNumero(Number(digits)) : '';
+                setErrores((x) => ({ ...x, valor: undefined }));
+              }}
+            >
+              <span slot="start" className="mr-1 text-tinta">
+                $
+              </span>
+            </IonInput>
+            <span className={`mt-1 block text-caption ${errores.valor ? 'text-error-rndc' : 'text-muted'}`}>
+              {errores.valor ? `${errores.valor} · ` : ''}Disponible: {formatPesos(disponible)}
+            </span>
+          </label>
+
           <div>
-            <p className="m-0 mb-2 text-[15px] leading-5 font-medium text-tinta">Motivo</p>
+            <p className="m-0 mb-2 text-[14px] leading-5 text-muted">Motivo</p>
             {errorMotivos ? (
               <Aviso tono="error" action={<AvisoAccion onClick={cargarMotivos} className="text-error-rndc">Reintentar</AvisoAccion>}>
                 {errorMotivos}
@@ -229,8 +228,8 @@ const Formulario: React.FC<{
                         setMotivo(m.codigo);
                         setErrores((x) => ({ ...x, motivo: undefined, descripcion: undefined }));
                       }}
-                      className={`cursor-pointer rounded-full border border-solid px-4 py-2 text-[14px] leading-5 ${
-                        activo ? 'border-tinta bg-tinta text-white' : 'border-divider bg-white text-tinta'
+                      className={`cursor-pointer rounded-full border-0 px-4 py-2.5 text-[15px] leading-5 font-medium ${
+                        activo ? 'bg-tinta text-white' : 'bg-superficie text-tinta'
                       }`}
                     >
                       {m.nombre}
@@ -242,37 +241,34 @@ const Formulario: React.FC<{
             {errores.motivo && <p className="mt-1 mb-0 text-caption text-error-rndc">{errores.motivo}</p>}
           </div>
 
-          <div>
-            <div className={`rounded-2xl border ${errores.descripcion ? 'border-error-rndc' : 'border-divider'}`}>
-              <IonItem lines="none" className="sobreanticipo-item">
-                <IonTextarea
-                  label={motivoSel?.requiereDescripcion ? 'Descripción' : 'Descripción (opcional)'}
-                  labelPlacement="stacked"
-                  placeholder="Ej. cambio de llanta en La Línea"
-                  autoGrow
-                  rows={2}
-                  maxlength={DESCRIPCION_MAX}
-                  value={descripcion}
-                  onIonInput={(e) => {
-                    setDescripcion(e.detail.value ?? '');
-                    setErrores((x) => ({ ...x, descripcion: undefined }));
-                  }}
-                />
-              </IonItem>
-            </div>
-            {errores.descripcion && <p className="mt-1 mb-0 text-caption text-error-rndc">{errores.descripcion}</p>}
-          </div>
+          <label className="block">
+            <span className="app-field-label mb-2">{motivoSel?.requiereDescripcion ? 'Descripción' : 'Descripción (opcional)'}</span>
+            <IonTextarea
+              className={`app-textarea ${errores.descripcion ? 'app-invalid' : ''}`}
+              aria-label={motivoSel?.requiereDescripcion ? 'Descripción' : 'Descripción (opcional)'}
+              placeholder="Ej. cambio de llanta en La Línea"
+              autoGrow
+              rows={2}
+              maxlength={DESCRIPCION_MAX}
+              value={descripcion}
+              onIonInput={(e) => {
+                setDescripcion(e.detail.value ?? '');
+                setErrores((x) => ({ ...x, descripcion: undefined }));
+              }}
+            />
+            {errores.descripcion && <span className="mt-1 block text-caption text-error-rndc">{errores.descripcion}</span>}
+          </label>
 
           {error && <Aviso tono="error">{error}</Aviso>}
         </div>
       </IonContent>
       <IonFooter className="ion-no-border">
         <IonToolbar className="app-modal-footer">
-          <div className="px-4 py-2">
+          <div className="px-5 py-3">
             {!online && <p className="mt-0 mb-2 text-center text-caption text-muted">Necesitas señal para enviar la solicitud</p>}
             <IonButton
               expand="block"
-              className="m-0 h-[52px] normal-case tracking-normal"
+              className="m-0 h-14 text-[17px]"
               disabled={enviando || !online || !motivos}
               onClick={enviar}
             >

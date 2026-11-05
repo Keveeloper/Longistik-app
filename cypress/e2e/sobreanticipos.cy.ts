@@ -128,7 +128,7 @@ describe('Sobreanticipos', () => {
       .find('ion-content')
       .then(($c) => ($c[0] as HTMLIonContentElement).scrollToBottom(0));
     visiblePage().contains('No hay solicitudes').should('be.visible');
-    visiblePage().contains('Disponible: $ 1.122.500').should('be.visible');
+    visiblePage().contains('Disponible $1.122.500').should('be.visible');
     cy.contains('ion-button', 'Solicitar sobreanticipo').click();
     cy.wait('@motivos');
 
@@ -158,9 +158,9 @@ describe('Sobreanticipos', () => {
     // An inline modal stays in the DOM, hidden, with its content unmounted
     cy.get('ion-modal').should('have.class', 'overlay-hidden');
     cy.get('ion-modal input').should('not.exist');
-    visiblePage().contains('Sobreanticipos (1)').should('be.visible');
+    visiblePage().contains('Sobreanticipos · 1').should('be.visible');
     visiblePage().contains('Pendiente de aprobación').should('be.visible');
-    visiblePage().contains('$ 350.000').should('exist');
+    visiblePage().contains('$350.000').should('exist');
   });
 
   it('disables the button with the reason on a fulfilled manifiesto', () => {
@@ -173,7 +173,7 @@ describe('Sobreanticipos', () => {
     visiblePage().contains(motivo).should('exist');
     visiblePage().contains('ion-button', 'Solicitar sobreanticipo').should('have.attr', 'disabled');
     visiblePage().contains('Pagada').should('exist');
-    visiblePage().contains('Aprobado por $ 300.000').should('exist');
+    visiblePage().contains('Aprobado por $300.000').should('exist');
   });
 
   it('lists my requests, filters them and cancels a pending one', () => {

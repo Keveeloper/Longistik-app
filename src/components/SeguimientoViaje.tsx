@@ -21,7 +21,7 @@ import { descripcionDispositivo } from '../offline/evidencia';
 import { capturarReporte, reportar } from '../offline/seguimiento';
 import { seguimientoService, type EstadoSeguimiento, type Viaje } from '../services/seguimiento.service';
 import { useAuthStore } from '../store/auth.store';
-import { formatHora } from '../utils/format';
+import { formatHora, tipoOracion } from '../utils/format';
 import { Aviso, AvisoAccion } from './Avisos';
 
 /** Text the driver accepts (Ley 1581 de 2012). Changing it needs a new version in the backend. */
@@ -74,7 +74,7 @@ const ConsentimientoModal: React.FC<{ isOpen: boolean; onAceptar: () => void; on
           <IonButton expand="block" className="m-0 h-[52px] normal-case tracking-normal" disabled={enviando} onClick={onAceptar}>
             {enviando ? <IonSpinner name="crescent" /> : 'Aceptar e iniciar'}
           </IonButton>
-          <IonButton expand="block" fill="clear" color="dark" className="m-0 normal-case tracking-normal" onClick={onCerrar}>
+          <IonButton expand="block" className="btn-secundario m-0 h-[52px]" onClick={onCerrar}>
             Ahora no
           </IonButton>
         </div>
@@ -258,40 +258,71 @@ const SeguimientoViaje: React.FC<{
     ) : null;
   }
 
-  const boton = (nombre: string, texto: string, icon: string, onClick: () => void, props: Record<string, unknown> = {}) => (
-    <IonButton className="m-0 normal-case tracking-normal" disabled={!!ocupado} onClick={onClick} {...props}>
+  // Main action: green pill across the card; the others: smaller pills side by side
+  const boton = (
+    nombre: string,
+    texto: string,
+    icon: string,
+    onClick: () => void,
+    { principal = false, className = '', ...props }: { principal?: boolean; className?: string } & Record<string, unknown> = {}
+  ) => (
+    <IonButton
+      expand={principal ? 'block' : undefined}
+      className={`m-0 ${principal ? 'h-[52px] text-[17px]' : 'h-11 flex-1 text-[15px]'} ${className}`}
+      disabled={!!ocupado}
+      onClick={onClick}
+      {...props}
+    >
       {ocupado === nombre ? <IonSpinner name="crescent" /> : <IonIcon slot="start" icon={icon} />}
       {texto}
     </IonButton>
   );
 
+  const principal =
+    data.puedeIniciar && (!viaje || viaje.estado === 'asignado')
+      ? boton('iniciar', viaje ? 'Aceptar e iniciar' : 'Iniciar viaje', icons.playerPlay, empezar, {
+          principal: true,
+          disabled: !!ocupado || !online,
+        })
+      : propio && viaje?.estado === 'activo'
+        ? boton('compartir', 'Compartir ubicación', icons.mapPinShare, compartir, { principal: true })
+        : propio && viaje?.estado === 'pausado'
+          ? boton('reanudar', 'Reanudar', icons.playerPlay, () => void accion('reanudar', () => seguimientoService.reanudar(viaje.id)), {
+              principal: true,
+            })
+          : null;
+
   return (
-    <div className="rounded-2xl bg-superficie p-4">
+    <div className="rounded-3xl bg-superficie p-5">
       <div className="flex items-start gap-3">
-        <IonIcon icon={icons.route} className="mt-[2px] shrink-0 text-[26px] text-tinta" aria-hidden="true" />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+          <IonIcon icon={icons.route} className="text-[22px] text-tinta" aria-hidden="true" />
+        </span>
         <div className="min-w-0 flex-1">
           {!viaje && data.puedeIniciar && (
             <>
-              <p className="m-0 text-[15px] leading-5 font-medium text-tinta">Activa el seguimiento</p>
-              <p className="mt-1 mb-0 text-[13px] leading-[18px] text-muted">
+              <p className="m-0 text-[17px] leading-[22px] font-semibold text-tinta">Activa el seguimiento</p>
+              <p className="mt-1 mb-0 text-[15px] leading-5 text-muted">
                 Tu empresa sabrá que vas bien. Te pediremos la ubicación cada tanto; tú decides cuándo responder.
               </p>
             </>
           )}
           {!viaje && !data.puedeIniciar && data.motivoNoDisponible && (
-            <p className="m-0 text-[14px] leading-5 text-muted">{data.motivoNoDisponible}</p>
+            <p className="m-0 text-[15px] leading-5 text-muted">{data.motivoNoDisponible}</p>
           )}
           {viaje?.estado === 'asignado' && (
             <>
-              <p className="m-0 text-[15px] leading-5 font-medium text-tinta">
+              <p className="m-0 text-[17px] leading-[22px] font-semibold text-tinta">
                 {propio ? 'Tu empresa activó el seguimiento de este viaje' : 'Seguimiento asignado, sin aceptar'}
               </p>
-              {!propio && viaje.conductor && <p className="mt-1 mb-0 text-[14px] text-tinta">Conductor: {viaje.conductor.nombre}</p>}
+              {!propio && viaje.conductor && (
+                <p className="mt-1 mb-0 text-[15px] leading-5 text-tinta">Conductor: {tipoOracion(viaje.conductor.nombre)}</p>
+              )}
             </>
           )}
           {(viaje?.estado === 'activo' || viaje?.estado === 'pausado') && (
             <>
-              <p className="m-0 mb-1 text-[15px] leading-5 font-medium text-tinta">
+              <p className="m-0 mb-1 text-[17px] leading-[22px] font-semibold text-tinta">
                 {viaje.estado === 'activo' ? 'Viaje en curso' : 'Seguimiento en pausa'}
               </p>
               <ResumenViaje viaje={viaje} propio={propio} />
@@ -304,22 +335,18 @@ const SeguimientoViaje: React.FC<{
         <p className="mt-3 mb-0 text-caption text-muted">Sin señal: lo que compartas se enviará al recuperar la conexión.</p>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {data.puedeIniciar &&
-          (!viaje || viaje.estado === 'asignado') &&
-          boton('iniciar', viaje ? 'Aceptar e iniciar' : 'Iniciar viaje', icons.playerPlay, empezar, { disabled: !!ocupado || !online })}
-        {propio && viaje?.estado === 'activo' && (
-          <>
-            {boton('compartir', 'Compartir ubicación', icons.mapPinShare, compartir)}
-            {boton('ayuda', 'Necesito ayuda', icons.lifebuoy, ayuda, { color: 'danger', fill: 'outline' })}
-            {boton('pausar', 'Pausar', icons.playerPause, pausar, { color: 'dark', fill: 'clear' })}
-          </>
-        )}
-        {propio && viaje?.estado === 'pausado' &&
-          boton('reanudar', 'Reanudar', icons.playerPlay, () => void accion('reanudar', () => seguimientoService.reanudar(viaje.id)))}
-        {propio && (viaje?.estado === 'activo' || viaje?.estado === 'pausado') &&
-          boton('terminar', 'Terminar viaje', icons.flag, terminar, { color: 'dark', fill: 'clear' })}
-      </div>
+      {principal && <div className="mt-5">{principal}</div>}
+      {propio && (viaje?.estado === 'activo' || viaje?.estado === 'pausado') && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {viaje.estado === 'activo' && (
+            <>
+              {boton('ayuda', 'Necesito ayuda', icons.lifebuoy, ayuda, { className: 'btn-peligro basis-full' })}
+              {boton('pausar', 'Pausar', icons.playerPause, pausar, { className: 'btn-blanco' })}
+            </>
+          )}
+          {boton('terminar', 'Terminar viaje', icons.flag, terminar, { className: 'btn-blanco' })}
+        </div>
+      )}
 
       <ConsentimientoModal
         isOpen={consentimiento}
