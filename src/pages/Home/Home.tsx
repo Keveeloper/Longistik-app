@@ -48,7 +48,7 @@ const Skeleton: React.FC<{ width: string }> = ({ width }) => (
 const quickActions: { label: string; icon: string; permiso?: Permiso; href?: string; contador?: 'manifiestos' | 'remesas' }[] = [
   { label: 'Ver manifiestos', icon: icons.truck, href: '/manifiestos', contador: 'manifiestos' },
   { label: 'Ver remesas', icon: icons.fileDescription, href: '/remesas', contador: 'remesas' },
-  { label: 'Reportar novedad', icon: icons.alertTriangle, permiso: 'novedades.reportar' },
+  { label: 'Reportar novedad', icon: icons.alertTriangle, permiso: 'novedades.reportar', href: '/novedades/reportar' },
   // The Remesas tab opens on the ones still to be delivered
   { label: 'Cumplir remesa', icon: icons.clipboardCheck, permiso: 'remesas.cumplir', href: '/remesas' },
 ];

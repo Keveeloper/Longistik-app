@@ -36,24 +36,3 @@
 .novedades-segment ion-segment-button::part(indicator-background) {
   border-radius: 9999px;
 }
-
-/* Ionic's scoped .list-md padding and margin beat Tailwind utilities */
-ion-list.novedades-list {
-  padding: 0;
-  margin-top: 6px;
-}
-
-/* Cards: full-width soft dividers, content aligned to the top */
-.novedades-item {
-  --padding-start: 20px;
-  --inner-padding-end: 20px;
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  --border-color: var(--app-divider-color);
-  --background-activated: var(--ion-color-dark);
-  --background-activated-opacity: 0.04;
-}
-
-.novedades-item::part(native) {
-  align-items: flex-start;
-}

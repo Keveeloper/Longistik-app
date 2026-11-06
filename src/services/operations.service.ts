@@ -3,6 +3,7 @@
  * "Revisar y enviar" and the RNDC report are not used by any screen yet.
  */
 import { api, type Page, type PageParams } from '../api/client';
+import type { Novedad } from './novedades.service';
 
 export type EstadoRndc = 'reportado' | 'pendiente' | 'error';
 export type EstadoManifiesto = 'activo' | 'cumplido' | 'inactivo';
@@ -54,8 +55,8 @@ export interface Remesa {
 
 export interface ManifiestoDetalle extends Omit<Manifiesto, 'remesas'> {
   remesas: Remesa[];
-  /** Empty until the backend has novedades */
-  novedades: unknown[];
+  /** Newest first (P8) */
+  novedades: Novedad[];
   rndcError: string | null;
 }
 

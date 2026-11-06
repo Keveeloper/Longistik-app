@@ -4,6 +4,7 @@ import { icons } from '../icons';
 import Home from '../pages/Home/Home';
 import ManifiestoDetalle from '../pages/Manifiestos/ManifiestoDetalle';
 import Manifiestos from '../pages/Manifiestos/Manifiestos';
+import NovedadDetalle from '../pages/Novedades/NovedadDetalle';
 import Novedades from '../pages/Novedades/Novedades';
 import RemesaDetalle from '../pages/Remesas/RemesaDetalle';
 import Remesas from '../pages/Remesas/Remesas';
@@ -32,6 +33,7 @@ const TabsLayout: React.FC = () => (
       <Route path="/sobreanticipos" element={<MisSobreanticipos />} />
       <Route path="/notificaciones" element={<Notificaciones />} />
       <Route path="/novedades" element={<Novedades />} />
+      <Route path="/novedades/:id" element={<NovedadDetalle />} />
       {/* "/" is redirected by the guard in App.tsx */}
     </IonRouterOutlet>
     <IonTabBar slot="bottom" className="app-tab-bar">

@@ -8,7 +8,7 @@ import { apiErrorMessage } from '../api/client';
 import { cumplidosService, type DatosEntrega, type RegistroCumplido } from '../services/cumplidos.service';
 import { useAuthStore } from '../store/auth.store';
 import { useCompanyStore } from '../store/company.store';
-import { useCumplidosQueue, type CumplidoEnCola } from '../store/cumplidosQueue.store';
+import { useCumplidosQueue } from '../store/cumplidosQueue.store';
 import { base64ToBytes, readBase64, removePath, writeBase64 } from './files';
 
 export const nuevoId = () =>
@@ -24,7 +24,7 @@ const sesionActual = () => ({
 });
 
 /** Items of the signed-in user in the selected company (another user's wait for them to sign in). */
-export const colaDeSesion = (cola: CumplidoEnCola[]) => {
+export const colaDeSesion = <T extends { companyCode: string; userId: number }>(cola: T[]) => {
   const { companyCode, userId } = sesionActual();
   return cola.filter((c) => c.companyCode === companyCode && c.userId === userId);
 };

@@ -11,6 +11,7 @@ import TabsLayout from './layouts/TabsLayout';
 import CompanySelect from './pages/CompanySelect/CompanySelect';
 import Login from './pages/Login/Login';
 import ManifiestoDocumento from './pages/Manifiestos/ManifiestoDocumento';
+import ReportarNovedad from './pages/Novedades/ReportarNovedad';
 import CumplirRemesa from './pages/Remesas/CumplirRemesa';
 import CompartirUbicacion from './pages/Seguimiento/CompartirUbicacion';
 import { useAuthStore } from './store/auth.store';
@@ -77,6 +78,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/manifiestos/:id/documento" element={<ManifiestoDocumento />} />
       <Route path="/remesas/:id/cumplir" element={<CumplirRemesa />} />
       <Route path="/seguimiento/:manifiestoId/compartir" element={<CompartirUbicacion />} />
+      <Route path="/novedades/reportar" element={<ReportarNovedad />} />
       <Route path="/*" element={<TabsLayout />} />
     </IonRouterOutlet>
   );

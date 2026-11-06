@@ -28,9 +28,6 @@ export const formatTimeAgo = (isoDateTime: string, now = Date.now()) => {
   return `Hace ${Math.floor(hours / 24)} d`;
 };
 
-/** ISO date-time `minutes` minutes before now (for mock data). */
-export const isoDateTimeMinutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60000).toISOString();
-
 /** Day group heading as in the designs: "Hoy · Ago 22" for today, "Ago 21" otherwise. */
 export const formatDayHeading = (isoDate: string) =>
   isoDate === isoDateDaysAgo(0) ? `Hoy · ${formatShortDate(isoDate)}` : formatShortDate(isoDate);
@@ -99,3 +96,6 @@ export const ciudad = (municipio: { nombre: string } | null | undefined) =>
 export const lugar = (municipio: { nombre: string } | null | undefined) => tipoOracion(municipio?.nombre);
 
 export const plural = (count: number, one: string, many: string) => `${formatNumero(count)} ${count === 1 ? one : many}`;
+
+/** "una foto, la ubicación y quién recibe" */
+export const enumerar = (items: string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`);
