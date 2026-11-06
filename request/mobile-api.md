@@ -285,7 +285,7 @@ Al cerrar sesión, mientras el token de sesión sigue valiendo. `204` también s
 }
 ```
 
-`link.tipo`: `manifiesto` | `remesa` | `seguimiento` (el viaje del manifiesto `id`), o `link: null`.
+`link.tipo`: `manifiesto` | `remesa` | `seguimiento` (el viaje del manifiesto `id`) | `novedad` (§P8), o `link: null`.
 
 ### `POST /mobile/notificaciones/{id}/leida` y `POST /mobile/notificaciones/leidas`
 
@@ -601,7 +601,6 @@ la novedad no se reintenta.
 Estos puntos necesitan tablas nuevas o decisiones de negocio:
 
 - **Crear remesa y crear manifiesto** (`POST /mobile/remesas`, `/mobile/manifiestos`). El cumplido de remesa ya está (§P6). Hay que definir qué campos del formulario de la web pide la app, porque el RNDC exige muchos más que los de la propuesta: tiempos pactados, empaque, sede, etc. También falta guardar la `Idempotency-Key`, que necesita una tabla. Los permisos (`manifiestos.crear`, `remesas.crear`) ya existen.
-- **Avisos de novedades (N4)**: campana y push al reportar, tomar y cerrar una novedad (§P8).
 
 Decisiones tomadas (no se implementan):
 - **Vehículos de terceros:** no hay asignación automática al expedir el manifiesto. Cuando cambia el conductor, se reasigna el vehículo desde la web.

@@ -6,7 +6,7 @@ import { api, type Page, type PageParams } from '../api/client';
 
 /** Screen a notification opens. */
 export interface LinkAviso {
-  tipo: 'manifiesto' | 'remesa' | 'seguimiento';
+  tipo: 'manifiesto' | 'remesa' | 'seguimiento' | 'novedad';
   id: number;
   seccion?: string;
 }

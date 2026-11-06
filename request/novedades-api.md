@@ -141,10 +141,22 @@ Permisos por defecto (migración): los administradores tienen todo y el perfil d
 menos borrar. El Conductor y el Supervisor de flota no tienen nada en la web: reportan desde la
 app.
 
+## Avisos (campana y push)
+
+Detalle en [notificaciones-api.md](notificaciones-api.md) §Catálogo. Todos llevan el enlace
+`{ tipo: 'novedad', id }`: la app abre `/novedades/{id}` y la web el detalle de la novedad.
+
+| `tipo` | Cuándo | Para quién |
+|---|---|---|
+| `novedad.reportada` | Al reportarse. Un reintento con la misma llave no avisa otra vez | `novedades.gestionar`, salvo quien la reportó |
+| `novedad.critica` | Lo mismo, si es accidente o siniestro. Canal `alertas` y prioridad alta | Los mismos |
+| `novedad.en_gestion` | Al tomarla | Quien la reportó |
+| `novedad.cerrada` | Al cerrarla, con la resolución | Quien la reportó |
+
+Nadie recibe el aviso de lo que hizo él mismo. Si un aviso no se puede guardar, la acción se hace
+igual.
+
 ## Pendiente
 
-- **N4, avisos:** `novedad.reportada` a quienes tienen `novedades.gestionar` (canal `alertas`
-  para las críticas), y `novedad.en_gestion` y `novedad.cerrada` a quien la reportó, con enlace
-  `{ tipo: 'novedad', id }`.
 - **Futuro:** cumplido con suspensión y transbordo desde accidente, varada o siniestro; descuento
   F/D/C prellenado en el cumplido; ajuste de tiempos con motivo 1.

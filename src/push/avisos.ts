@@ -6,7 +6,7 @@ export type DataPush = Record<string, string | undefined>;
 export const parseLink = (link: unknown): LinkAviso | null => {
   try {
     const l = (typeof link === 'string' ? JSON.parse(link) : link) as LinkAviso | null;
-    if (!l || !['manifiesto', 'remesa', 'seguimiento'].includes(l.tipo)) return null;
+    if (!l || !['manifiesto', 'remesa', 'seguimiento', 'novedad'].includes(l.tipo)) return null;
     const id = Number(l.id);
     return Number.isInteger(id) && id > 0 ? { tipo: l.tipo, id, ...(l.seccion ? { seccion: String(l.seccion) } : {}) } : null;
   } catch {
@@ -18,6 +18,7 @@ export const parseLink = (link: unknown): LinkAviso | null => {
 export const rutaDeAviso = (tipo: string | undefined, link: LinkAviso | null): string => {
   if (!link) return '/notificaciones';
   if (tipo === 'seguimiento.pedido') return `/seguimiento/${link.id}/compartir`;
+  if (link.tipo === 'novedad') return `/novedades/${link.id}`;
   if (link.tipo === 'remesa') return `/remesas/${link.id}`;
   const seccion = link.tipo === 'seguimiento' ? 'seguimiento' : link.seccion;
   return `/manifiestos/${link.id}${seccion ? `?seccion=${encodeURIComponent(seccion)}` : ''}`;

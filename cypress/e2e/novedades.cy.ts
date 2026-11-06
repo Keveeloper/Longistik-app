@@ -244,6 +244,32 @@ describe('Novedades', () => {
     cy.wrap(keys).should('have.length', 1);
   });
 
+  it('el aviso de la campana abre la novedad', () => {
+    cy.intercept('GET', '**/mobile/notificaciones?*', {
+      body: page([
+        {
+          id: 3,
+          tipo: 'novedad.cerrada',
+          titulo: 'Tu novedad fue cerrada',
+          mensaje: 'Faltante de carga (manifiesto MT000812): El cliente confirmó el faltante.',
+          link: { tipo: 'novedad', id: 92 },
+          prioridad: 'normal',
+          creadaEn: haceMinutos(10),
+          leida: false,
+        },
+      ]),
+    });
+    cy.intercept('POST', '**/mobile/notificaciones/3/leida', { statusCode: 204 }).as('leida');
+
+    entrar();
+    cy.get('button[aria-label="Notificaciones"]', { includeShadowDom: true }).first().click();
+    cy.location('pathname').should('eq', '/notificaciones');
+    visiblePage().contains('button', 'Tu novedad fue cerrada').click();
+    cy.wait('@leida');
+    cy.location('pathname').should('eq', '/novedades/92');
+    visiblePage().contains('h1', 'Faltante de carga').should('be.visible');
+  });
+
   it('sin el permiso no se puede reportar', () => {
     const sinPermiso = { ...conductor, permisos: ['app.acceso', 'manifiestos.ver_asignados'] };
     cy.intercept('POST', '**/mobile/auth/login', { statusCode: 201, body: { accessToken: 't', expiresIn: 2592000, user: sinPermiso } });

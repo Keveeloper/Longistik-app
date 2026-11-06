@@ -14,7 +14,7 @@ import {
   useIonViewWillEnter,
   type RefresherEventDetail,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoSinConexion } from '../../components/Avisos';
@@ -24,6 +24,7 @@ import { useCachedQuery } from '../../hooks/useCachedQuery';
 import { icons } from '../../icons';
 import { formatoCoordenadas } from '../../offline/evidencia';
 import { novedadesService, type NovedadDetalle as Detalle } from '../../services/novedades.service';
+import { useAvisosStore } from '../../store/avisos.store';
 import { ciudad, formatFechaHora, tipoOracion } from '../../utils/format';
 
 const EVENTO: Record<Detalle['historial'][number]['tipo'], string> = {
@@ -46,6 +47,11 @@ const NovedadDetalle: React.FC = () => {
   useIonViewWillEnter(() => {
     load();
   }, [load]);
+  // A notification arrived with the app open (e.g. the office took or closed it)
+  const avisos = useAvisosStore((s) => s.version);
+  useEffect(() => {
+    if (avisos) load();
+  }, [avisos, load]);
 
   const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
     await load();

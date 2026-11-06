@@ -14,6 +14,11 @@ describe('rutaDeAviso', () => {
     expect(rutaDeAviso('seguimiento.pedido', { tipo: 'seguimiento', id: 812 })).toBe('/seguimiento/812/compartir');
   });
 
+  it('a novedad opens its detail', () => {
+    expect(rutaDeAviso('novedad.cerrada', { tipo: 'novedad', id: 90 })).toBe('/novedades/90');
+    expect(parseLink('{"tipo":"novedad","id":90}')).toEqual({ tipo: 'novedad', id: 90 });
+  });
+
   it('without a link, the list', () => {
     expect(rutaDeAviso('x', null)).toBe('/notificaciones');
   });

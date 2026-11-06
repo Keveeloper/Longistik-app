@@ -23,6 +23,7 @@ import { descartarNovedad, enviarNovedad, novedadesEnCola } from '../../offline/
 import { hasPermiso } from '../../services/auth.service';
 import { novedadesService, type Novedad, type VistaNovedades } from '../../services/novedades.service';
 import { useAuthStore } from '../../store/auth.store';
+import { useAvisosStore } from '../../store/avisos.store';
 import { useNovedadesCola, type NovedadEnCola } from '../../store/novedadesCola.store';
 import { plural } from '../../utils/format';
 import { ListSkeleton } from '../Manifiestos/Manifiestos';
@@ -51,11 +52,12 @@ const Novedades: React.FC = () => {
     reload();
   }, [reload]);
 
-  // One that was waiting for signal went out: show it in the list
+  // One that was waiting for signal went out, or a notification arrived (taken, closed): reload
   const enCola = cola.length;
+  const avisos = useAvisosStore((s) => s.version);
   useEffect(() => {
     reload();
-  }, [enCola, reload]);
+  }, [enCola, avisos, reload]);
 
   const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
     await reload();
