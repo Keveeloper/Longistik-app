@@ -127,7 +127,7 @@ Los permisos son el módulo `/novedades` de la matriz de roles y se validan en e
 |---|---|---|---|
 | `GET` | `/novedades/tipos` | ver | Catálogo |
 | `GET` | `/novedades/contador` | ver | `{ abiertas }` para el contador del menú |
-| `GET` | `/novedades` | ver | Bandeja `{ items, page, pageSize, total, abiertas }`. Filtros: `estado` (uno o varios separados por coma), `vista`, `tipo`, `desde`/`hasta` (`YYYY-MM-DD`, fecha de la novedad en hora de Colombia), `placa`, `manifiesto` (número MT…), `conductor` (quien la reportó o el conductor del manifiesto) |
+| `GET` | `/novedades` | ver | Bandeja `{ items, page, pageSize, total, abiertas }`. Filtros: `estado` (uno o varios separados por coma), `vista`, `tipo`, `desde`/`hasta` (`YYYY-MM-DD`, fecha de la novedad en hora de Colombia), `placa`, `manifiesto` (número MT…), `manifiestoId`, `conductor` (quien la reportó o el conductor del manifiesto) |
 | `GET` | `/novedades/{id}` | ver | Detalle con notas |
 | `POST` | `/novedades` | registrar | Igual que el de la app (p. ej. el conductor llamó). La llave es opcional, la novedad queda con `reportadaDesde: "web"` y sin alcance. Responde el detalle |
 | `POST` | `/novedades/{id}/gestionar` | gestionar | La toma quien llama. Pasa a `en_gestion` |
