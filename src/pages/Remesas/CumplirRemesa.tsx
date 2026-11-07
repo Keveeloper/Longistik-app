@@ -18,6 +18,8 @@ import { useParams } from 'react-router-dom';
 import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoAccion } from '../../components/Avisos';
 import { Dato } from '../../components/Detalle';
+import FotosEvidencia from '../../components/FotosEvidencia';
+import Paso from '../../components/Paso';
 import { TiemposEditor, TiemposResumen } from '../../components/TiemposRndc';
 import { useCachedQuery } from '../../hooks/useCachedQuery';
 import { useOnline } from '../../hooks/useOnline';
@@ -42,7 +44,7 @@ import {
 import { operationsService, type RemesaDetalle } from '../../services/operations.service';
 import { useAuthStore } from '../../store/auth.store';
 import { useCompanyStore } from '../../store/company.store';
-import { ciudad, formatFechaHora, formatKg, tipoOracion } from '../../utils/format';
+import { ciudad, enumerar, formatFechaHora, formatKg, tipoOracion } from '../../utils/format';
 import { tiemposIniciales, validarTiempos } from '../../utils/tiempos';
 import './CumplirRemesa.css';
 
@@ -59,21 +61,6 @@ type Resultado =
   | { tipo: 'enviado'; registro: RegistroCumplido }
   | { tipo: 'en_cola'; mensaje?: string }
   | { tipo: 'rechazado'; mensaje: string };
-
-const Paso: React.FC<{ n: number; titulo: string; children: React.ReactNode }> = ({ n, titulo, children }) => (
-  <section className="mt-8 first:mt-0">
-    <h2 className="m-0 mb-4 flex items-center gap-3 text-[20px] leading-7 font-semibold text-tinta">
-      <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-tinta text-[13px] font-semibold text-white">
-        {n}
-      </span>
-      {titulo}
-    </h2>
-    {children}
-  </section>
-);
-
-/** "una foto, la ubicación y quién recibe" */
-const enumerar = (items: string[]) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} y ${items[items.length - 1]}`);
 
 /** RNDC times: what will be sent, and the option to adjust them. */
 const TiemposSeccion: React.FC<{
@@ -420,32 +407,14 @@ const CumplirFormulario: React.FC<{ remesaId: number }> = ({ remesaId }) => {
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  {fotos.map((f, i) => (
-                    <div key={i} className="relative aspect-square overflow-hidden rounded-2xl bg-superficie">
-                      <img src={`data:image/jpeg;base64,${f.base64}`} alt={`Foto ${i + 1}`} className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        aria-label={`Quitar foto ${i + 1}`}
-                        onClick={() => setFotos(fotos.filter((_, j) => j !== i))}
-                        className="absolute top-1 right-1 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-0 bg-tinta/80 p-0 text-white"
-                      >
-                        <IonIcon icon={icons.x} className="text-[16px]" />
-                      </button>
-                    </div>
-                  ))}
-                  {fotos.length < MAX_FOTOS && (
-                    <button
-                      type="button"
-                      onClick={tomarFoto}
-                      disabled={!ubicacion || tomando}
-                      className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-[#c5ced3] bg-white p-0 text-tinta disabled:cursor-default disabled:opacity-50"
-                    >
-                      {tomando ? <IonSpinner name="crescent" /> : <IonIcon icon={icons.camera} className="text-[24px]" />}
-                      <span className="text-[14px] leading-[18px] font-semibold">{fotos.length ? 'Otra foto' : 'Tomar foto'}</span>
-                    </button>
-                  )}
-                </div>
+                <FotosEvidencia
+                  fotos={fotos.map((f) => f.base64)}
+                  max={MAX_FOTOS}
+                  tomando={tomando}
+                  disabled={!ubicacion}
+                  onTomar={tomarFoto}
+                  onQuitar={(i) => setFotos(fotos.filter((_, j) => j !== i))}
+                />
                 <p className="mt-3 mb-0 text-[14px] leading-5 text-muted">
                   La remesa firmada y la mercancía entregada. Cada foto lleva fecha, hora y coordenadas.
                 </p>

@@ -47,6 +47,7 @@ Los permisos salen del rol del usuario, en la misma matriz de permisos de la web
 | `vehiculos.asignar` | `/vehicle-assignments` · crear (web) |
 | `seguimiento.ver` | `/seguimiento` · ver: ver los viajes y recibir sus alertas (migración `02-11-2026-notificaciones-seguimiento-viaje.sql`) |
 | `seguimiento.asignar` | `/seguimiento` · crear: asignar, terminar y pedir la ubicación desde la web |
+| `novedades.gestionar` | `/novedades` · editar: tomar, anotar y cerrar novedades desde la web (migración `06-11-2026-novedades-manifiesto.sql`) |
 
 El **alcance** decide qué manifiestos y remesas ve el usuario:
 - `todos`: el rol tiene `manifiestos.ver_todos`. Gana si también tiene `ver_asignados`.
@@ -174,7 +175,7 @@ Cada item trae los campos de la propuesta, más `vehiculoId`.
 
 Trae los mismos campos que el item del listado, más:
 - `remesas`: arreglo con el resumen de cada remesa. Si el manifiesto está anulado, son las remesas que liberó, con `manifiestoId: null`.
-- `novedades`: `[]` por ahora.
+- `novedades`: las del manifiesto, con el formato del item de §P8, de la más reciente a la más antigua.
 - `rndcError`.
 
 Responde `404` si no existe o si el usuario no lo puede ver.
@@ -284,7 +285,7 @@ Al cerrar sesión, mientras el token de sesión sigue valiendo. `204` también s
 }
 ```
 
-`link.tipo`: `manifiesto` | `remesa` | `seguimiento` (el viaje del manifiesto `id`), o `link: null`.
+`link.tipo`: `manifiesto` | `remesa` | `seguimiento` (el viaje del manifiesto `id`) | `novedad` (§P8), o `link: null`.
 
 ### `POST /mobile/notificaciones/{id}/leida` y `POST /mobile/notificaciones/leidas`
 
@@ -575,12 +576,31 @@ despachador) y `fin`. Un reporte responde el pedido que estaba abierto cuando se
 llegue tarde sin señal; el de un viaje ya terminado se acepta si se capturó antes del fin. Un
 `rechazado` no se reintenta.
 
+## P8 · Novedades del manifiesto
+
+Detalle (catálogo, reglas, respuesta y API de la web): [novedades-api.md](novedades-api.md).
+Requerimiento: `request/novedades-manifiesto.md`.
+
+El conductor reporta lo que le pasa al viaje o a la carga, con fotos opcionales, la ubicación y
+la hora del teléfono. Solo la web toma, anota y cierra la novedad. Los 7 tipos son fijos y cada
+uno dice a qué trámite del RNDC equivale. Esta versión no envía nada al RNDC.
+
+| Método | Ruta | Uso |
+|---|---|---|
+| `GET` | `/mobile/catalogos/tipos-novedad` | `[{ codigo, nombre, ayuda, rndc: { tramite, codigo, descripcion }, requiereRemesa }]` |
+| `POST` | `/mobile/novedades` | Permiso `novedades.reportar`. `multipart/form-data` con `manifiestoId`, `remesaId?`, `tipo`, `descripcion`, `latitud?`, `longitud?`, `precisionMetros?`, `capturadaEn?` y `fotos` (0 a 5). Header `Idempotency-Key` obligatorio. Responde `201`, o `200` con la misma novedad si la llave ya existía. Con el manifiesto cumplido o anulado, `422 MANIFIESTO_NO_ACTIVO`. Con una remesa de otro manifiesto, `422 REMESA_NO_PERTENECE`. Con un manifiesto que no ve, `404` |
+| `GET` | `/mobile/novedades?vista=abiertas\|cerradas&manifiestoId=&page=&pageSize=` | Página. `abiertas` = `abierta` + `en_gestion` |
+| `GET` | `/mobile/novedades/{id}` | Detalle con fotos e historial, sin las notas internas de la oficina |
+
+Con alcance `todos` se ven todas. Con `asignados`, las que reportó el usuario y las de los
+manifiestos que puede ver. Para la cola sin señal, un `400` o un `422` es un rechazo definitivo y
+la novedad no se reintenta.
+
 ## Pendiente
 
 Estos puntos necesitan tablas nuevas o decisiones de negocio:
 
 - **Crear remesa y crear manifiesto** (`POST /mobile/remesas`, `/mobile/manifiestos`). El cumplido de remesa ya está (§P6). Hay que definir qué campos del formulario de la web pide la app, porque el RNDC exige muchos más que los de la propuesta: tiempos pactados, empaque, sede, etc. También falta guardar la `Idempotency-Key`, que necesita una tabla. Los permisos (`manifiestos.crear`, `remesas.crear`) ya existen.
-- **Novedades y subida de archivos**: no hay tabla de novedades ni catálogo de tipos de novedad (`/mobile/catalogos/tipos-novedad`). El permiso `novedades.reportar` ya existe.
 
 Decisiones tomadas (no se implementan):
 - **Vehículos de terceros:** no hay asignación automática al expedir el manifiesto. Cuando cambia el conductor, se reasigna el vehículo desde la web.

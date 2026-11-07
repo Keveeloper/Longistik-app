@@ -19,6 +19,7 @@ import AppHeader from '../../components/AppHeader';
 import { Aviso, AvisoAccion, AvisoSinConexion } from '../../components/Avisos';
 import { Dato, DetalleTitulo, FilaLista, Seccion } from '../../components/Detalle';
 import { EstadoBadge, RndcEstado } from '../../components/EstadoBadge';
+import { NovedadFila } from '../../components/Novedades';
 import SeguimientoViaje from '../../components/SeguimientoViaje';
 import { SobreanticipoFila, SolicitarSobreanticipoModal } from '../../components/Sobreanticipos';
 import { useCachedQuery } from '../../hooks/useCachedQuery';
@@ -200,6 +201,8 @@ const ManifiestoDetalle: React.FC = () => {
   );
 
   const puedeSobreanticipos = useAuthStore((s) => hasPermiso(s.user, 'sobreanticipos.solicitar'));
+  const puedeReportar = useAuthStore((s) => hasPermiso(s.user, 'novedades.reportar'));
+  const router = useIonRouter();
   const sobre = useCachedQuery<SobreanticiposManifiesto>(`sobreanticipos:${manifiestoId}`, () =>
     sobreanticiposService.delManifiesto(manifiestoId)
   );
@@ -221,7 +224,7 @@ const ManifiestoDetalle: React.FC = () => {
   const contentRef = useRef<HTMLIonContentElement>(null);
   const seccion =
     location.pathname === `/manifiestos/${manifiestoId}` ? new URLSearchParams(location.search).get('seccion') : null;
-  const haySeccion = !!m && (seccion === 'seguimiento' ? verSeguimiento : seccion === 'sobreanticipos' ? !!sobre.data : false);
+  const haySeccion = !!m && (seccion === 'seguimiento' ? verSeguimiento : seccion === 'sobreanticipos' ? !!sobre.data : seccion === 'novedades');
   useEffect(() => {
     if (!seccion || !haySeccion) return;
     const content = contentRef.current;
@@ -235,6 +238,9 @@ const ManifiestoDetalle: React.FC = () => {
   useIonViewWillEnter(() => {
     reload();
   }, [reload]);
+
+  // Copies saved on the phone before novedades existed have none
+  const novedades = m?.novedades ?? [];
 
   const handleRefresh = async (e: CustomEvent<RefresherEventDetail>) => {
     await reload();
@@ -324,6 +330,28 @@ const ManifiestoDetalle: React.FC = () => {
                     <RemesaFila key={r.id} remesa={r} />
                   ))}
                 </div>
+              )}
+            </Seccion>
+
+            <Seccion title="Novedades" count={novedades.length || undefined} id="novedades">
+              {novedades.length === 0 ? (
+                <p className="mt-2 mb-0 text-[15px] leading-[22px] text-muted">Sin novedades</p>
+              ) : (
+                <div className="-mx-5 mt-1">
+                  {novedades.map((n) => (
+                    <NovedadFila key={n.id} novedad={n} sinManifiesto onClick={() => router.push(`/novedades/${n.id}`)} />
+                  ))}
+                </div>
+              )}
+              {puedeReportar && m.estado === 'activo' && (
+                <IonButton
+                  expand="block"
+                  className="btn-secundario mt-4 mb-0 h-[52px] text-[16px]"
+                  onClick={() => router.push(`/novedades/reportar?manifiestoId=${m.id}`)}
+                >
+                  <IonIcon slot="start" icon={icons.alertTriangle} />
+                  Reportar novedad
+                </IonButton>
               )}
             </Seccion>
 

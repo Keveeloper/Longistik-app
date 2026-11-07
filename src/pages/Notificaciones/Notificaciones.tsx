@@ -28,6 +28,7 @@ import { ListSkeleton } from '../Manifiestos/Manifiestos';
 const ICONO: Record<string, string> = {
   sobreanticipo: icons.cash,
   seguimiento: icons.route,
+  novedad: icons.alertTriangle,
 };
 const iconoDe = (tipo: string) =>
   tipo === 'seguimiento.auxilio' ? icons.lifebuoy : ICONO[tipo.split('.')[0]] ?? icons.bell;

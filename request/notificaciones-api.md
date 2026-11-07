@@ -36,7 +36,7 @@ ConfigPanel → Firebase Cloud Messaging → Android / iOS / navegador
 ## Tablas
 
 **`notificacion`**: `userId`, `tipo`, `titulo` (65), `mensaje` (240), `link` (JSON
-`{ tipo, id, seccion? }`), `prioridad`, `creadaEn`, `leidaEn` y el estado del push:
+`{ tipo, id, seccion? }`, `tipo` = `manifiesto` | `remesa` | `seguimiento` | `novedad`), `prioridad`, `creadaEn`, `leidaEn` y el estado del push:
 `pushEstado` (`pendiente` | `enviada` | `sin_dispositivos` | `error` | `no_aplica`),
 `pushIntentos`, `pushSiguienteIntento`, `pushError`. Se borran a los 90 días.
 
@@ -74,6 +74,10 @@ Una vez al día borra los avisos viejos, los tokens abandonados y los de usuario
 | `seguimiento.sin_respuesta` | `seguimiento.ver` | `alertas` | Sí | 2 h |
 | `seguimiento.pausado` | `seguimiento.ver` | `operacion` | Sí | 6 h |
 | `seguimiento.llegada` | `seguimiento.ver` | — | Solo campana | — |
+| `novedad.reportada` | `novedades.gestionar` (`canEdit` en `/novedades`), salvo quien la reportó | `operacion` | Sí | 24 h |
+| `novedad.critica` | Igual, para accidente y siniestro | `alertas` | Sí, alta | 2 h |
+| `novedad.en_gestion` | Quien la reportó, salvo que la tome él mismo | `operacion` | Sí | 24 h |
+| `novedad.cerrada` | Quien la reportó (con la resolución), salvo que la cierre él mismo | `operacion` | Sí | 72 h |
 
 Los textos se arman en una función por tipo, para que la app y la web muestren lo mismo. Sin
 datos personales en el push (ni documentos ni teléfonos); los valores en pesos van solo al propio

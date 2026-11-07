@@ -1,4 +1,5 @@
 import type { EstadoRndc } from '../services/operations.service';
+import type { EstadoNovedad } from '../services/novedades.service';
 import type { EstadoSobreanticipo } from '../services/sobreanticipos.service';
 
 type Estado = 'creada' | 'manifiesto' | 'en_ruta' | 'cumplido' | 'activo' | 'inactivo';
@@ -60,5 +61,21 @@ const SOBREANTICIPO: Record<EstadoSobreanticipo, { label: string; className: str
 /** State of a sobreanticipo request. */
 export const SobreanticipoBadge: React.FC<{ estado: EstadoSobreanticipo }> = ({ estado }) => {
   const { label, className } = SOBREANTICIPO[estado] ?? SOBREANTICIPO.solicitada;
+  return <span className={`${base} ${className}`}>{label}</span>;
+};
+
+// Novedades reuse the Estados colors (as in the 07 · Novedades design)
+const NOVEDAD: Record<EstadoNovedad | 'pendiente_envio' | 'rechazada', { label: string; className: string }> = {
+  abierta: { label: 'Abierta', className: 'bg-en-ruta-soft text-en-ruta' },
+  en_gestion: { label: 'En gestión', className: 'bg-creada-soft text-creada' },
+  cerrada: { label: 'Cerrada', className: 'bg-cumplido-soft text-cumplido' },
+  // Still on the phone (no signal) / refused by the backend
+  pendiente_envio: { label: 'Pendiente de envío', className: 'bg-rndc-pendiente-soft text-en-ruta' },
+  rechazada: { label: 'No enviada', className: 'bg-error-rndc-soft text-error-rndc' },
+};
+
+/** State of a novedad, or of one still queued on the phone. */
+export const NovedadBadge: React.FC<{ estado: keyof typeof NOVEDAD }> = ({ estado }) => {
+  const { label, className } = NOVEDAD[estado] ?? NOVEDAD.abierta;
   return <span className={`${base} ${className}`}>{label}</span>;
 };
